@@ -7,6 +7,8 @@ use Carbon\Carbon;
 use Carbon\CarbonInterval;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+
 
 class AsistenciaController extends Controller
 {
@@ -17,6 +19,7 @@ class AsistenciaController extends Controller
      */
     public function index()
     {
+
         return view('web.welcome');
     }
 
@@ -171,7 +174,7 @@ class AsistenciaController extends Controller
     {
 
         if ($request->ajax()) {
-            $departamento = DB::connection('merulink')->table('Departamentos')->where('nombre','=',$nombre)->get();
+            $Departamento = DB::connection('merulink')->table('Departamentos')->where('nombre','=',$nombre)->get();
 
             $empleados = DB::connection('merulink')->table('empleados')->select('cedula', 'primer_nombre', 'primer_apellido')->where('Departamento_id','=', $Departamento->codigo)->where('inactivo','!=', 1)->get();
 
@@ -1171,5 +1174,12 @@ class AsistenciaController extends Controller
         }
 
     }
+
+    public function auditoria()
+    {
+
+        return view('asistencia.auditoria');
+    }
+
 
 }
