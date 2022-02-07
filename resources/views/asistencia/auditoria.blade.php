@@ -6,7 +6,7 @@
       <img class="img-fluid " src="{{ asset('images/titulo-plaza-meru.png')}}" width="33%" height="50%">
     </div>
     <div class="col ">
-      <div class="display-6 fs-6 fw-bold text-center py-2 " style="color: #014a97;">Consultar Asistencia</div>
+      <div class="display-6 fs-6 fw-bold text-center py-2 " style="color: #014a97;">Auditoría</div>
     </div>
     <div class="col">
       <p></p>
@@ -31,7 +31,7 @@
 
   <hr class="dropdown-divider">
 
-  {!! Form::open(['route'=>'ejecutar_consulta','class'=>'g-1 align-items-center','id'=>'formConsultar']) !!}
+  {!! Form::open(['route'=>'ejecutar_consulta_aud','class'=>'g-1 align-items-center','id'=>'formConsultar']) !!}
   <div class="row mb-2">
     <div class="col w-25">
       {!! Form::label('fechaInicio', 'Rango de Fecha:', ['class'=>'form-check-label']) !!}

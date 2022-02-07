@@ -4,6 +4,7 @@ namespace App\Http\Livewire;
 
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class BarridoDatosPunchData extends Component
 {
@@ -20,14 +21,56 @@ class BarridoDatosPunchData extends Component
         if ($totalRegistrosPD > $totalRegistrosRA) {
             for ($i = 0; $i < $totalRegistrosPD - $totalRegistrosRA; $i++) {
 
-                $empleado =  DB::connection('merulink')->table('Empleados')->select('primer_nombre', 'primer_apellido', 'Departamento_id')->where('cedula', '=', $registrosPD[$totalRegistrosRA + $i]->EnrollID)->first();
+                $empleado =  DB::connection('merulink')->table('Empleados')->select('cedula','primer_nombre', 'primer_apellido', 'Departamento_id')->where('cedula', '=', $registrosPD[$totalRegistrosRA + $i]->EnrollID)->first();
+
                 $departamento = DB::connection('merulink')->table('Departamentos')->where('codigo', '=', $empleado->Departamento_id)->first();
                 $nombreCompleto = $empleado->primer_nombre . ' ' . $empleado->primer_apellido;
-                $fechaPD = date('Y-m-d', strtotime($registrosPD[$totalRegistrosRA + $i]->PunchTime));
-                $horaPD = $registrosPD[$totalRegistrosRA + $i]->PunchTime;
                 $tipoPD = 'B';
-
+                $horaPD = date('h:i:s a', strtotime($registrosPD[$totalRegistrosRA + $i]->PunchTime));
+                $fechaPD = date('Y-m-d', strtotime($registrosPD[$totalRegistrosRA + $i]->PunchTime));
+                $fechaAntPD = date('Y-m-d', strtotime($registrosPD[$totalRegistrosRA + $i]->PunchTime . '- 1 days'));
                 $existeRA = DB::connection('ra')->table('Asistencia')->where('cedula', '=', $registrosPD[$totalRegistrosRA + $i]->EnrollID)->where('fecha', '=', $fechaPD)->first();
+                $existeAntRA = DB::connection('ra')->table('Asistencia')->where('cedula', '=', $registrosPD[$totalRegistrosRA + $i]->EnrollID)->where('fecha', '=', $fechaAntPD)->where('hora_entrada','!=',null)->where('hora_salida','=',null)->first();
+                $existeAntRA_2 = DB::connection('ra')->table('Asistencia')->where('cedula', '=', $registrosPD[$totalRegistrosRA + $i]->EnrollID)->where('fecha', '=', $fechaAntPD)->where('hora_entrada','!=',null)->where('hora_salida','!=',null)->where('hora_entrada_2','!=',null)->where('hora_salida_2','=',null)->first();
+
+                if ($existeAntRA_2) {
+
+                    $fechaRA=date('Y-m-d', strtotime($existeAntRA_2->hora_entrada_2));
+                    $carbonFullTimePD = new carbon($registrosPD[$totalRegistrosRA + $i]->PunchTime);
+                    $carbonfullHoraEntRA2 = new carbon($existeAntRA_2->hora_entrada_2);
+                    $carbonFranjaRA = new carbon(date('Y-m-d H:i:s', strtotime($fechaRA . ' 14:30:00')));
+
+                    if($carbonfullHoraEntRA2->diffInHours($carbonFullTimePD) <= 10){
+
+                        DB::connection('ra')->table('Asistencia')->where('cedula', '=', $registrosPD[$totalRegistrosRA + $i]->EnrollID)->where('fecha', '=', $fechaAntPD)->where('hora_entrada','!=',null)->where('hora_salida','!=',null)->where('hora_entrada_2','!=',null)->where('hora_salida_2','=',null)->update([
+                            'hora_salida_2' => $registrosPD[$totalRegistrosRA + $i]->PunchTime,
+                            'modo_entrada' => $existeAntRA_2->modo_entrada . ' ' . $tipoPD,
+                            'nocturno' => ($carbonfullHoraEntRA2->greaterThan($carbonFranjaRA->addHours(4)->addMinutes(30)) ? true : false)
+                        ]);
+
+                    }
+
+                }
+
+                if ($existeAntRA) {
+
+
+                    $fechaRA=date('Y-m-d', strtotime($existeAntRA->hora_entrada));
+                    $carbonFullTimePD = new carbon($registrosPD[$totalRegistrosRA + $i]->PunchTime);
+                    $carbonfullHoraEntRA = new carbon($existeAntRA->hora_entrada);
+                    $carbonFranjaRA = new carbon(date('Y-m-d H:i:s', strtotime($fechaRA . ' 14:30:00')));
+
+                    if(($carbonfullHoraEntRA->greaterThan($carbonFranjaRA))&&($carbonfullHoraEntRA->diffInHours($carbonFullTimePD) <= 10)){
+
+                        DB::connection('ra')->table('Asistencia')->where('cedula', '=', $registrosPD[$totalRegistrosRA + $i]->EnrollID)->where('fecha', '=', $fechaAntPD)->where('hora_entrada','!=',null)->where('hora_salida','=',null)->update([
+                            'hora_salida' => $registrosPD[$totalRegistrosRA + $i]->PunchTime,
+                            'modo_entrada' => $existeAntRA->modo_entrada . ' ' . $tipoPD,
+                            'nocturno' => ($carbonfullHoraEntRA->greaterThan($carbonFranjaRA->addHours(4)->addMinutes(30)) ? true : false)
+                        ]);
+
+                    }
+
+                }
 
                 if (empty($existeRA)) {
                     DB::connection('ra')->table('Asistencia')->insert([
@@ -35,26 +78,28 @@ class BarridoDatosPunchData extends Component
                         'nombre_apellido' => $nombreCompleto,
                         'departamento' => $departamento->nombre,
                         'fecha' => $fechaPD,
-                        'hora_entrada' => $horaPD,
+                        'hora_entrada' => $registrosPD[$totalRegistrosRA + $i]->PunchTime,
                         'modo_entrada' => $tipoPD
 
                     ]);
                 } else {
                     if ($existeRA->hora_salida == null) {
+
                         DB::connection('ra')->table('Asistencia')->where('cedula', '=', $registrosPD[$totalRegistrosRA + $i]->EnrollID)->where('fecha', '=', $fechaPD)->update([
-                            'hora_salida' => $horaPD,
+                            'hora_salida' => $registrosPD[$totalRegistrosRA + $i]->PunchTime,
                             'modo_entrada' => $existeRA->modo_entrada . ' ' . $tipoPD
                         ]);
                     } else {
                         if ($existeRA->hora_entrada_2 == null) {
                             DB::connection('ra')->table('Asistencia')->where('cedula', '=', $registrosPD[$totalRegistrosRA + $i]->EnrollID)->where('fecha', '=', $fechaPD)->update([
-                                'hora_entrada_2' => $horaPD,
+                                'hora_entrada_2' => $registrosPD[$totalRegistrosRA + $i]->PunchTime,
                                 'modo_entrada' => $existeRA->modo_entrada . ' ' . $tipoPD
                             ]);
                         } else {
                             if ($existeRA->hora_salida_2 == null) {
+
                                 DB::connection('ra')->table('Asistencia')->where('cedula', '=', $registrosPD[$totalRegistrosRA + $i]->EnrollID)->where('fecha', '=', $fechaPD)->update([
-                                    'hora_salida_2' => $horaPD,
+                                    'hora_salida_2' => $registrosPD[$totalRegistrosRA + $i]->PunchTime,
                                     'modo_entrada' => $existeRA->modo_entrada . ' ' . $tipoPD
                                 ]);
                             }
