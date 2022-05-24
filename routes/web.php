@@ -3,6 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\ReporteController;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Session;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -14,7 +17,9 @@ use App\Http\Controllers\ReporteController;
 |
 */
 
+
 Route::get('/', [AsistenciaController::class, 'index'])->name('inicio');
+
 Route::get('asistencia', [AsistenciaController::class, 'create'])->name('registrar');
 Route::get('departamento-{id}/empleados', [AsistenciaController::class, 'depto_empleados']);
 Route::get('departamentos', [AsistenciaController::class, 'deptos']);

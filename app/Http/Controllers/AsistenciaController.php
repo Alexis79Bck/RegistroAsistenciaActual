@@ -8,7 +8,7 @@ use Carbon\CarbonInterval;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
-
+use Illuminate\Support\Facades\Session;
 
 class AsistenciaController extends Controller
 {
@@ -19,7 +19,9 @@ class AsistenciaController extends Controller
      */
     public function index()
     {
-
+        // Session::setId($request->sessionId);
+        // $user=Session::getId($request->sessionId);
+        // dd($request->sessionId, $user);
         return view('web.welcome');
     }
 
@@ -1178,7 +1180,242 @@ class AsistenciaController extends Controller
     public function auditoria()
     {
 
-        return view('asistencia.auditoria');
+        return view('asistencia.auditoria',['info'=>[], 'minFijadoFechaInicio' => '2021-01-01','tipoReporte'=> 0 ]);
+    }
+
+
+    public function ejecutarAuditoria(Request $request){
+        $minFijadoFechaInicio = '2021-01-01';
+
+        if (Carbon::parse($request->fechaFin)->lessThan(Carbon::parse($request->fechaInicio))) {
+            return redirect()->route('auditoria_asistencia')->with('mensaje-error','La Fecha Final no puede ser menor a la Fecha Inicial.')->withInput();
+        }
+
+        if (Carbon::parse($request->fechaInicio)->diffInDays(Carbon::parse($request->fechaFin)) > 31) {
+            return redirect()->route('auditoria_asistencia')->with('mensaje-error','La consulta solicitada no puede exceder de los 31 Días de diferencia.')->withInput();
+        }
+
+        if($request->consultaHoy == null && $request->consultaPor == null ){
+            $tipoReporte = 1;
+
+            $titulo = 'por Rango de Fechas';
+            $departamentos = DB::connection('merulink')->table('Departamentos')->where('codigo', '>', 0)->get();
+            // $dataDevLogReg = DB::connection('ra')->table('DeviceLogRegister')->where('PunchTime','>=',$request->fechaInicio)->where('PunchTime','<=',$request->fechaFin)->get();
+            // $ctData = count($dataDevLogReg);
+            $ctFecha = Carbon::parse($request->fechaInicio)->diffInDays(Carbon::parse($request->fechaFin)) ;
+
+            for ($h=0; $h <= $ctFecha ; $h++) {
+                $fcX = new Carbon($request->fechaInicio);
+                $lstFecha[$h] = $fcX->addDays($h);
+            }
+
+
+
+            $ctDepartamentos = count($departamentos);
+            foreach ($departamentos as $loop1 => $departamento) {
+                $empleados = DB::connection('merulink')->table('Empleados')->select('cedula','primer_nombre','primer_apellido')->where('Departamento_id','=',$departamento->codigo)->where('inactivo','=',false)->get();
+                $ctEmpleadosPorDepto[$loop1] = count($empleados);
+                foreach ($empleados as $loop2 => $empleado) {
+                    $empleadosPorDepto[$loop1][$loop2] = [
+                        'departamento' => $departamento->nombre,
+                        'cedula' => $empleado->cedula,
+                        'nombreCompleto' => $empleado->primer_nombre . ' ' . $empleado->primer_apellido
+                    ];
+                    $dataDevLogRegPorEmpleados = DB::connection('ra')->table('DeviceLogRegister')->where('EnrollId','=',$empleado->cedula)->where('PunchTime','>=',$request->fechaInicio)->where('PunchTime','<=',$request->fechaFin)->orderBy('PunchTime','ASC')->get();
+                    $ctDataDevLogRegPorEmpleados[$loop1][$loop2] = count($dataDevLogRegPorEmpleados);
+
+                    // $dataAsistenciaPorEmpleado = DB::connection('ra')->table('asistencia')->where('cedula','=',$empleado->cedula)->where('fecha','=',date('Y-m-d', strtotime($request->fechaInicio)))->first();
+                    $accion = '';
+                    if (!empty($dataDevLogRegPorEmpleados)) {
+                        $ctXYPorEmpleados[$loop1][$loop2] = count($dataDevLogRegPorEmpleados);
+                        for ($h=0; $h <=$ctFecha ; $h++) {
+                            foreach ($dataDevLogRegPorEmpleados as $loop3 => $punchReg) {
+                                $fecha_hora[$loop3] = new carbon($punchReg->PunchTime);
+                                switch ($punchReg->PunchType) {
+                                    case 'FP':
+                                        $tipoPunchPorEmpleado[$loop1][$loop2][$h][$loop3] = 'Huella';
+                                        break;
+
+                                    case 'Face':
+                                        $tipoPunchPorEmpleado[$loop1][$loop2][$h][$loop3] = 'Rostro';
+                                        break;
+
+                                    case 'ID+Password':
+                                        $tipoPunchPorEmpleado[$loop1][$loop2][$h][$loop3] = 'PIN';
+                                        break;
+                                }
+                                $fechaPorEmpleado[$loop1][$loop2][$h][$loop3] = $fecha_hora[$loop3]->format('d-m-Y');
+                                $horaPorEmpleado[$loop1][$loop2][$h][$loop3] = $fecha_hora[$loop3]->format('H:i:s a');
+
+                                    if ($fecha_hora[$loop3]->format('d-m-Y') == $lstFecha[$h]->format('d-m-Y')) {
+                                        if ($ctXYPorEmpleados[$loop1][$loop2] % 2 != 0) {
+                                            $accionPorEmpleado[$loop1][$loop2][$loop3] = 'Entró';
+                                        }else{
+                                            $accionPorEmpleado[$loop1][$loop2][$loop3] = 'Salió';
+                                        }
+                                    }
+
+                                    $mx[$h] = $lstFecha[$h]->toDateString();
+                                    $my[$loop3] = $fecha_hora[$loop3]->toDateString();
+
+
+
+
+                                // dd('Loop1 = ' . $loop1,'Loop2 = ' . $loop2,'Loop3 = ' . $loop3, $ctDataDevLogRegPorEmpleados[$loop1][$loop2], $tipoPunchPorEmpleado[$loop1][$loop2][$loop3], $horaPorEmpleado[$loop1][$loop2][$loop3]);
+                                // $dataAsistenciaPorEmpleadoEnt = DB::connection('ra')->table('asistencia')->where('cedula','=',$punchReg->EnrollID)->where('fecha','=',date('Y-m-d', strtotime($punchReg->PunchTime)))->where('hora_entrada','=', $punchReg->PunchTime)->orWhere('hora_entrada_2','=',$punchReg->PunchTime)->first();
+                                // $dataAsistenciaPorEmpleadoSal = DB::connection('ra')->table('asistencia')->where('cedula','=',$punchReg->EnrollID)->where('fecha','=',date('Y-m-d', strtotime($punchReg->PunchTime)))->where('hora_salida','=', $punchReg->PunchTime)->orWhere('hora_salida_2','=',$punchReg->PunchTime)->first();
+
+                                // if ($dataAsistenciaPorEmpleadoEnt != null) {
+                                //     $accionPorEmpleado[$loop1][$loop2][$loop3] = 'Entró';
+                                // }
+
+                                // if ($dataAsistenciaPorEmpleadoSal != null) {
+                                //     $accionPorEmpleado[$loop1][$loop2][$loop3] = 'Salió';
+                                // }
+                                // if ($dataAsistenciaPorEmpleadoSal == null && $dataAsistenciaPorEmpleadoEnt == null) {
+                                //     $accionPorEmpleado[$loop1][$loop2][$loop3] = '';
+                                // }
+
+                                // if ($ctDataDevLogRegPorEmpleados[$loop2] % 2 == 0){
+                                //     $accion = 'Salió';
+                                // }else{
+                                //     $accion = 'Entró';
+                                // }
+                                // if ($dataAsistenciaPorEmpleado){
+                                //     if ((($punchReg->PunchTime == $dataAsistenciaPorEmpleado->hora_entrada)||($punchReg->PunchTime == $dataAsistenciaPorEmpleado->hora_entrada_2))) {
+                                //         $accion = 'Entró';
+                                //     }
+                                //     if ((($punchReg->PunchTime == $dataAsistenciaPorEmpleado->hora_salida)||($punchReg->PunchTime == $dataAsistenciaPorEmpleado->hora_salida_2))) {
+                                //         $accion = 'Salió';
+                                //     }
+                                // }else{
+
+                                // }
+
+
+                                // $punchPorEmpleados[$loop2][$loop3] = [
+                                //     'fechaHora' => new carbon($punchReg->PunchTime),
+                                //     'accion' => $accion,
+                                //     'tipoPunch' => $tipoPunch,
+                                // ];
+
+                                $ctXYPorEmpleados[$loop1][$loop2]--;
+                            }
+                        }
+                            dd($request->fechaInicio, $request->fechaFin, $ctFecha,$fecha_hora, $lstFecha, $mx,$my, $accionPorEmpleado);
+                        // dd($punchPorEmpleados[$loop2][$loop3]['fechaHora']->format('d-m-Y'), $punchPorEmpleados[$loop2][$loop3]['fechaHora']->format('H:i:s a'));
+                    }
+
+
+                }
+
+            }
+
+            //  foreach ($departamentos as $loop1 => $departamento) {
+            //     $asistencia = DB::connection('ra')->table('asistencia')->where('departamento','=',$departamento->nombre)->get();
+            //  }
+
+            //$data = DB::connection('ra')->table('asistencia')->select('cedula', 'nombre_apellido','departamento', 'fecha','hora_entrada','hora_salida', 'hora_entrada_2','hora_salida_2','modo_entrada','nocturno')->where('fecha','>=',$request->fechaInicio)->where('fecha','<=',$request->fechaFin)->groupBy('cedula', 'nombre_apellido','departamento', 'fecha','hora_entrada','hora_salida','hora_entrada_2','hora_salida_2','modo_entrada','nocturno')->get();
+
+//            dd('Todos los departamentos -> ', $departamentos, 'Total de Departamentos -> ' , $ctDepartamentos, 'Total de Empleados por Departamentos -> ' , $ctEmpleadosPorDepto, 'Lista de Empleadois por Departamentos -> ', $empleadosPorDepto,   'Todos los punch de cada Empleado por Departamento:', $punchPorEmpleados);
+//dd($ctDepartamentos,$departamentos,$ctEmpleadosPorDepto,$empleadosPorDepto,$ctDataDevLogRegPorEmpleados,$tipoPunchPorEmpleado,$fechaPorEmpleado,$horaPorEmpleado,$accionPorEmpleado);
+            return view('asistencia.auditoria',compact('minFijadoFechaInicio','ctDepartamentos','departamentos','ctEmpleadosPorDepto','empleadosPorDepto','ctDataDevLogRegPorEmpleados','tipoPunchPorEmpleado','fechaPorEmpleado','horaPorEmpleado','accionPorEmpleado','tipoReporte'));
+            // $ctFecha = Carbon::parse($request->fechaInicio)->diffInDays(Carbon::parse($request->fechaFin)) ;
+            // $totalHrMinFinal = '';
+            // for ($k=0; $k <= $ctFecha ; $k++) {
+            //     $lstFecha[$k] = date('d-m-Y', strtotime($request->fechaInicio . '+' . $k .' days'));
+            // }
+
+
+            // if ($ctData > 0) {
+
+            //     for ($i=0; $i < count($departamento) ; $i++) {
+            //         $ctReg[$i] = 0;
+            //         for ($j=0; $j < count($data) ; $j++) {
+
+            //             $totalHrMinFinal = '';
+            //             if ($departamento[$i]->nombre == $data[$j]->departamento) {
+            //                 $ctReg[$i]=1;
+            //             }
+            //             if ($data[$j]->hora_entrada != null && $data[$j]->hora_salida != null) {
+            //                 $ent = Carbon::parse($data[$j]->hora_entrada);
+            //                 $sal = Carbon::parse($data[$j]->hora_salida);
+            //                 $totalHr = $ent->diffInHours($sal) < 10 ? '0' . $ent->diffInHours($sal) : $ent->diffInHours($sal);
+            //                 $totalMin =$ent->diffInMinutes($sal) % 60 < 10 ? '0' . $ent->diffInMinutes($sal) % 60 : $ent->diffInMinutes($sal) % 60;
+            //                 $totalHrMinFinal = $totalHr . ':' . $totalMin;
+            //             }else{
+            //                 $ent = '';
+            //                 $sal = '';
+            //                 $totalHr = '';
+            //                 $totalMin = '';
+            //             }
+            //             if ($data[$j]->hora_entrada_2 != null && $data[$j]->hora_salida_2 != null) {
+            //                 $ent2 = Carbon::parse($data[$j]->hora_entrada_2);
+            //                 $sal2 = Carbon::parse($data[$j]->hora_salida_2);
+            //                 $totalHr2 = $ent2->diffInHours($sal2) < 10 ? '0' . $ent2->diffInHours($sal2) : $ent2->diffInHours($sal2);
+            //                 $totalMin2 = $ent2->diffInMinutes($sal2) % 60 < 10 ? '0' . $ent2->diffInMinutes($sal2) % 60 : $ent2->diffInMinutes($sal2) % 60;
+            //                 if (intval($totalMin2) + intval($totalMin) > 59){
+
+            //                     $totalHrFinal = (intval($totalHr) + intval($totalHr2)) + 1;
+            //                     $totalMinFinal = (intval($totalMin) + intval($totalMin2)) - 60;
+            //                     $totalHrMinFinal = ($totalHrFinal < 10 ? '0' . $totalHrFinal : $totalHrFinal) . ':' . ($totalMinFinal < 10 ? '0' . $totalMinFinal : $totalMinFinal);
+
+            //                 }else{
+            //                     $totalHrFinal = (intval($totalHr) + intval($totalHr2));
+            //                     $totalMinFinal = (intval($totalMin) + intval($totalMin2));
+            //                     $totalHrMinFinal = ($totalHrFinal < 10 ? '0' . $totalHrFinal : $totalHrFinal) . ':' . ($totalMinFinal < 10 ? '0' . $totalMinFinal : $totalMinFinal);
+
+            //                 }
+
+            //             }else{
+            //                 $ent2 = '';
+            //                 $sal2 = '';
+            //                 $totalHr2 = '';
+            //                 $totalMin2 = '';
+            //             // $totalHrMinFinal = '';
+
+            //             }
+
+            //             $info[$i][$j] = [
+            //                 'departamento' => $data[$j]->departamento,
+            //                 'fecha' => date('d-m-Y', strtotime($data[$j]->fecha)),
+            //                 'nombre' => $data[$j]->nombre_apellido,
+            //                 'cedula' =>  $data[$j]->cedula,
+            //                 'fechaEnt' => date('d-m-Y', strtotime($data[$j]->hora_entrada)),
+            //                 'horaEnt' => date('h : i a', strtotime($data[$j]->hora_entrada)),
+            //                 'fechaSal' => ($data[$j]->hora_salida != null ? date('d-m-Y', strtotime($data[$j]->hora_salida)) : ''),
+            //                 'horaSal' => ($data[$j]->hora_salida != null ? date('h : i a', strtotime($data[$j]->hora_salida)) : ''),
+            //                 'horaEnt2' => ($data[$j]->hora_entrada_2 != null ? date('h : i a', strtotime($data[$j]->hora_entrada_2)) : ''),
+            //                 'horaSal2' => ($data[$j]->hora_salida_2 != null ? date('h : i a', strtotime($data[$j]->hora_salida_2)) : ''),
+            //                 'totalHoras' => $totalHrMinFinal,
+            //                 'Modo' => $data[$j]->modo_entrada,
+            //                 'Nocturno'=> $data[$j]->nocturno,
+
+            //             ];
+
+
+
+            //         }
+
+            //     }
+            // }else{
+            //         $info ="";
+            //         $ctReg = 0;
+
+            // }
+
+            // $request->session()->put([
+            //     'data'=>$info,
+            //     'tipo'=>$tipoReporte,
+            //     'titulo'=>$titulo,
+            //     'fechaInicio'=>date('d-m-Y', strtotime($request->fechaInicio)),
+            //     'fechaFin'=>date('d-m-Y', strtotime($request->fechaFin)),
+            //     'ctReg' => $ctReg,
+
+            //     ]);
+            //return view('asistencia.auditoria',compact('info','minFijadoFechaInicio','ctData','ctDepartamento','departamento','ctReg','ctFecha', 'lstFecha','tipoReporte'));
+        }
+
     }
 
 

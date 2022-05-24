@@ -102,11 +102,11 @@
       <div class="display-6 fs-6 fw-bold text-center py-2 " style="color: #014a97;">Resultado de la Consulta</div>
     </div>
     <div class="col-md-auto">
-      @if ($info != null)
+      {{-- @if ($info != null)
 
         <a class="btn btn-outline-danger" href="{{ route ('impReporte')}}" target="_blank" type="button" form="formConsultar"><i class="fs-4 far fa-file-pdf fa-lg"></i></i></a>
 
-      @endif
+      @endif --}}
 
     </div>
 
@@ -116,37 +116,74 @@
   <div class="row justify-content-center  mb-4" id="resultadoBusqueda">
     @switch($tipoReporte)
         @case(1)
-        @if ($ctData > 0)
-        @for ($i = 0; $i < $ctDepartamento; $i++)
-        @if ($ctReg[$i] == 1)
-          <table class=" shadow table table-bordered border-dark">
-              <tr class="bg-primary text-light  fw-bold text-center">
 
-                  <td colspan="7">
-                    <span class="fs-4"> {{ $departamento[$i]->nombre}} </span>
-                  </td>
-
-              </tr>
-              <tr class="bg-primary text-light fs-6 fw-bold text-center">
-                <td>Fecha</td>
-                <td>Nombre y Apellido</td>
-                <td>Cédula</td>
-
-                <td>Hora Entrada</td>
-                <td>Hora Salida</td>
-                <td>Modo Entrada</td>
-                <td >Total Horas</td>
-              </tr>
-                @for ($j = 0; $j < $ctData; $j++)
-                 @if ($departamento[$i]->nombre == $info[$i][$j]['departamento'])
-                 @for ($k = 0; $k <= $ctFecha; $k++)
-
-                    @if ($lstFecha[$k] == $info[$i][$j]['fecha'])
+                @for ($i = 0; $i < $ctDepartamentos; $i++)
+                    <div class="mb-3 card">
 
 
-                        <tr>
+                        <span class="fs-4 card-title bg-default"> {{ $departamentos[$i]->nombre}} </span>
+
+
+                        <div class="card-body">
+                            <div class="accordion" id="acordeonAudit">
+                                @for ($j = 0; $j < $ctEmpleadosPorDepto[$i]; $j++)
+                                    @if ($departamentos[$i]->nombre == $empleadosPorDepto[$i][$j]['departamento'])
+                                        <div class="accordion-item">
+                                                <h2 class="accordion-header" id="headingOne">
+                                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#acc-{{$empleadosPorDepto[$i][$j]['cedula']}}" aria-expanded="true" aria-controls="acc-{{$empleadosPorDepto[$i][$j]['cedula']}}">
+                                                        <span >{{$empleadosPorDepto[$i][$j]['nombreCompleto']}}</span>
+                                                    </button>
+                                                </h2>
+
+                                                <div id="acc-{{$empleadosPorDepto[$i][$j]['cedula']}}" class="accordion-collapse collapse " aria-labelledby="{{$empleadosPorDepto[$i][$j]['cedula']}}" data-bs-parent="#acordeonAudit">
+                                                    <div class="accordion-body">
+                                                        <table class="table table-striped">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th><p class="fs-5 fw-bold">Fecha</p></th>
+                                                                    <th><p class="fs-5 fw-bold">Hora</p></th>
+                                                                    <th><p class="fs-5 fw-bold">Acceso Por</p></th>
+                                                                    <th><p class="fs-5 fw-bold">Acción</p></th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+
+                                                                @for ($k = 0; $k < $ctDataDevLogRegPorEmpleados[$i][$j]; $k++)
+
+                                                                    <tr>
+                                                                        <td>{{$fechaPorEmpleado[$i][$j][$k]}}</td>
+                                                                        <td>{{$horaPorEmpleado[$i][$j][$k]}}</td>
+                                                                        <td>{{$tipoPunchPorEmpleado[$i][$j][$k]}}</td>
+                                                                        <td>{{$accionPorEmpleado[$i][$j][$k]}}</td>
+                                                                    </tr>
+
+                                                                @endfor
+
+
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                        </div>
+                                    @endif
+
+
+                                @endfor
+                            </div>
+                        </div>
+
+                    </div>
+
+                @endfor
+
+
+
+
+
+
+                        {{-- <tr>
                           <td data-label="Fecha">{{$info[$i][$j]['fecha']}}</td>
-                          <td data-label="Nombre y Apellido">{{$info[$i][$j]['nombre']}}</td>
+                          <td data-label="Nombre y Apellido"></td>
                           <td data-label="Cédula">{{$info[$i][$j]['cedula']}}</td>
 
                           <td data-label="Hora Entrada">
@@ -241,7 +278,7 @@
 
           </tr>
         </table>
-        @endif
+        @endif--}}
 
             @break
         @case(2)
@@ -830,6 +867,7 @@
         var key = window.Event ? e.which : e.keyCode
         return ((key >= 48 && key <= 57) || (key==8))
       }
+
     </script>
 @endsection
 
