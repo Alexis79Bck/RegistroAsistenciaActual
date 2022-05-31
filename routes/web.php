@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\ReporteController;
+use App\Http\Controllers\PrenominaController;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -36,3 +37,9 @@ Route::get('pdf-reporte', [ReporteController::class, 'impReporte'])->name('impRe
 Route::get('/asistencia-manual', function () {
     return view('asistencia.registro-manual');
 })->name('registro_manual');
+
+Route::get('/incidencias', [PrenominaController::class, 'incidenciasIndex'])->name('incidencias');
+
+Route::get('/resumen', function () {
+    return view('prenomina.resumen.index');
+})->name('resumen');
