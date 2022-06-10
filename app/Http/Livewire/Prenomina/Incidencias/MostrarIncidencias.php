@@ -6,13 +6,20 @@ use Livewire\Component;
 
 class MostrarIncidencias extends Component
 {
-    public $empleados;
-    public $departamento;
 
-    public function mount($empleados, $departamento)
+    public $departamento;
+    public $listaFechas;
+    public $listaCedulaEmpleados;
+    public $resultadoEmpleadoHorario;
+
+
+    public function mount( $departamento,  $listaFechas, $listaCedulaEmpleados, $resultadoEmpleadoHorario)
     {
-        $this->empleados = $empleados;
+
         $this->departamento = $departamento;
+        $this->listaFechas = $listaFechas;
+        $this->listaCedulaEmpleados = $listaCedulaEmpleados;
+        $this->resultadoEmpleadoHorario = $resultadoEmpleadoHorario;
 
     }
 

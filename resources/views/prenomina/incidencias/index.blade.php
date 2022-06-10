@@ -25,6 +25,7 @@
     </div>
     <div class="row justify-content-end">
         <div class="col">
+
             @include('layouts.partials.mensajes')
         </div>
     </div>
@@ -135,7 +136,7 @@
         //         $('#cedula').hide();
         //         $('#selDepartamento').empty();
         $.get('departamentos', function(resp) {
-            $('#selDepartamento').append('<option value="Todos">-- Seleccione --</option>');
+            $('#selDepartamento').append('<option value="">-- Seleccione --</option>');
             for (i = 0; i < resp.length; i++) {
                 $('#selDepartamento').append('<option value="' + resp[i].codigo + '">' + resp[i]
                     .nombre + '</option>');

@@ -39,6 +39,7 @@ Route::get('/asistencia-manual', function () {
 })->name('registro_manual');
 
 Route::get('/incidencias', [PrenominaController::class, 'incidenciasIndex'])->name('incidencias');
+Route::post('/incidencias/mostrar', [PrenominaController::class, 'mostrarIncidencias'])->name('mostrar_incidencias');
 
 Route::get('/resumen', function () {
     return view('prenomina.resumen.index');

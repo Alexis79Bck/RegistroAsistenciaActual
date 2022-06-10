@@ -19,4 +19,4 @@ use App\Http\Controllers\PrenominaController;
 //     return $request->user();
 // });
 
-Route::post('/incidencias/mostrar', [PrenominaController::class, 'mostrarIncidencias'])->name('mostrar_incidencias');
+// Route::post('/incidencias/mostrar', [PrenominaController::class, 'mostrarIncidencias'])->name('mostrar_incidencias');
