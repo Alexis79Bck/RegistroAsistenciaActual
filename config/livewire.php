@@ -42,7 +42,7 @@ return [
     | 'asset_url'  => null,
     */
 
-    'asset_url'  =>  'http://localhost:82/RegistroAsistencia/public',
+    'asset_url'  =>  'http://172.24.8.54/RegistroAsistencia/public',
 
     /*
     |--------------------------------------------------------------------------
@@ -56,7 +56,7 @@ return [
     |
     */
 
-    'app_url' => env('APP_URL', 'http://localhost:82/RegistroAsistencia/public'),
+    'app_url' => env('APP_URL', 'http://172.24.8.54/RegistroAsistencia/public'),
 
     /*
     |--------------------------------------------------------------------------

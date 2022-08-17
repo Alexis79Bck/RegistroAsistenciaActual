@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\PrenominaController;
+use App\Http\Livewire\Prenomina\Incidencias\MostrarIncidencias; //use App\Http\Livewire\Prenomina\Incidencias\BotonGuardarIncidencias;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -19,7 +20,8 @@ use Illuminate\Support\Facades\Session;
 */
 
 
-Route::get('/', [AsistenciaController::class, 'index'])->name('inicio');
+Route::get('/home', [AsistenciaController::class, 'index'])->name('inicio');
+Route::get('/', [AsistenciaController::class, 'preloader']);
 
 Route::get('asistencia', [AsistenciaController::class, 'create'])->name('registrar');
 Route::get('departamento-{id}/empleados', [AsistenciaController::class, 'depto_empleados']);
@@ -38,8 +40,9 @@ Route::get('/asistencia-manual', function () {
     return view('asistencia.registro-manual');
 })->name('registro_manual');
 
-Route::get('/incidencias', [PrenominaController::class, 'incidenciasIndex'])->name('incidencias');
+Route::get('/incidencias/', [PrenominaController::class, 'incidenciasIndex'])->name('incidencias');//Route::get('/incidencias', [PrenominaController::class, 'incidenciasIndex'])->name('incidencias');
 Route::post('/incidencias/mostrar', [PrenominaController::class, 'mostrarIncidencias'])->name('mostrar_incidencias');
+Route::get('/incidencias/guardar-incidencia/', [PrenominaController::class, 'guardarIncidencias'])->name('guardar_incidencias');
 
 Route::get('/resumen', function () {
     return view('prenomina.resumen.index');

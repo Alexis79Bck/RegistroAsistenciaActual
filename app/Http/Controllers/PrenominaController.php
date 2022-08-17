@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Arr;
 
 
 class PrenominaController extends Controller
@@ -16,12 +17,28 @@ class PrenominaController extends Controller
      */
     public function incidenciasIndex()
     {
-        $maxFijadoFechaInicio = new Carbon('yesterday');
-        $minFijadoFechaInicio = new Carbon('yesterday -1 months');
-        $empleados = [];
 
-       // dd($maxFijadoFechaInicio, $minFijadoFechaInicio);
-       return view('prenomina.incidencias.index', compact('maxFijadoFechaInicio','minFijadoFechaInicio','empleados'));
+        // $dataSesion = session()->all();
+        // $allDepartamentos = "";
+        // $departamento = $dataSesion['id_departamento'];
+
+        // if ($dataSesion['rol_usuario'] == 'Super-Admin' || $dataSesion['rol_usuario'] == 'Recursos Humanos' ) {
+        //     $nivel = 1;
+        //     $allDepartamentos = DB::connection('merulink')->table('Departamentos')->where('codigo','!=',0)->get();
+        // }else{
+        //     $nivel = 2;
+        //     $departamento = $dataSesion['id_departamento'];
+        // }
+        // session()->put('nivel',$nivel);
+        // $f = new Carbon('yesterday');
+        // $fecha = $f->toDateString();
+        // $maxFecha = $f->toDateString();
+        // $f = new Carbon('yesterday -2 months');
+        // $minFecha = $f->toDateString();
+
+        return view('prenomina.incidencias.index');
+
+
     }
 
     /**
@@ -94,329 +111,353 @@ class PrenominaController extends Controller
     {
         $fechaInicio = new Carbon($request->fechaInicio);
         $fechaFin = new Carbon($request->fechaFin);
-
-        if ($request->departamento == null) {
-
-            return redirect()->route('incidencias')->with('mensaje-error','Debe seleccionar un departamento.');
-        }
-
-        if ($fechaInicio > $fechaFin) {
-
-            return redirect()->route('incidencias')->with('mensaje-error','La Fecha Inicio no puede ser mayor que la Fecha Fin.');
-        }
+        $mensaje = "";
 
         $empleados = DB::connection('merulink')->table('Empleados')->select('cedula','primer_nombre','primer_apellido','SubDepartamento_id')->where('Departamento_id','=', $request->departamento)->where('inactivo','=',false)->get();
-        $departamento = DB::connection('merulink')->table('Departamentos')->where('codigo','=',$request->departamento)->first();
+
+        $nombreDepartamento = DB::connection('merulink')->table('Departamentos')->select('nombre')->where('codigo','=', $request->departamento)->first();
+        session()->put('nombre_departamento',$nombreDepartamento->nombre);
+        $cantidadFechas = $diferenciaDias = $fechaFin->diffInDays($fechaInicio) + 1;
+        $totalEmpleados = count($empleados);
 
 
+        for ($j=0; $j < count($empleados) ; $j++) {
 
-        $diferenciaDias = $fechaFin->diffInDays($fechaInicio) + 1;
+            $listaEmpleados[$j]['cedula'] = $empleados[$j]->cedula; //$listaCedulaEmpleados[$j]['cedula'] = $empleados[$j]->cedula;
+            $listaEmpleados[$j]['nombre'] = $empleados[$j]->primer_nombre . ' ' . $empleados[$j]->primer_apellido; //$listaCedulaEmpleados[$j]['nombre'] = $empleados[$j]->primer_nombre . ' ' . $empleados[$j]->primer_apellido;
+            $listaEmpleados[$j]['contIncidencia'] = 0; //$listaCedulaEmpleados[$j]['contIncidencia'] = 0;
 
-        for ($i=0; $i < $diferenciaDias ; $i++) {
+            for ($i=0; $i < $diferenciaDias ; $i++) {
 
-            $tmp = new Carbon($request->fechaInicio . ' +' . $i . 'days');
-            $listaFechas[$i] = $tmp->toDateString();
+                $tmp = new Carbon($request->fechaInicio . ' +' . $i . 'days');
 
-            if ($tmp->locale('es')->day >= 1 && $tmp->locale('es')->day <= 15) {
-                $quincena[$i] = 1;
-            }else{
-                $quincena[$i] = 2;
-            }
+                $listaFechas[$i] = $tmp->toDateString();
 
-            for ($j=0; $j < count($empleados) ; $j++) {
-                $listaCedulaEmpleados[$j]['cedula'] = $empleados[$j]->cedula;
-                $listaCedulaEmpleados[$j]['contIncidencia'] = 0;
-                $listaCedulaEmpleados[$j]['nombre'] = $empleados[$j]->primer_nombre . ' ' . $empleados[$j]->primer_apellido;
-                $empleadoHorario[$i][$j] = DB::connection('merulink')->table('empleado_horarios')
+                if ($tmp->day >= 1 && $tmp->day <= 15) {
+                    $quincena[$i] = 1;
+                }else{
+                    $quincena[$i] = 2;
+                }
+
+                $listaEmpleados[$j]['fecha'] = $tmp->toDateString();
+                $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['Mensaje'] = '';//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['Mensaje'] = '';
+                $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeEntrada'] = '';//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['MensajeEntrada'] = '';
+                $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeSalida'] = '';//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['MensajeSalida'] = '';
+                $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = false;
+                $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '';
+                $regIncidencias = DB::connection('ra')->table('incidencias')
                                         ->where('cedula_empleado','=', $empleados[$j]->cedula )
-                                        ->where('mes','=',$tmp->locale('es')->monthName)
-                                        ->where('quincena','=',$quincena[$i])
+                                        ->where('fecha','=',$tmp->toDateString())
                                         ->first();
 
-                if ($empleadoHorario[$i][$j] != null) {
+                if ($regIncidencias == null) {
 
-
-                    // $resultadoEmpleadoHorario[$i][$j]['cedula'] = $empleados[$j]->cedula;
-                    // $resultadoEmpleadoHorario[$i][$j]['fecha']=$tmp->toDateString();
-                    // $resultadoEmpleadoHorario[$i][$j]['mes']=$tmp->locale('es')->month;
-                    // $resultadoEmpleadoHorario[$i][$j]['quincena']=$quincena[$i];
-
-                    //  $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['cedula'] = $empleados[$j]->cedula;
-                    // $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['fecha']=$tmp->toDateString();
-
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['mes']=$tmp->locale('es')->month;
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['quincena']=$quincena[$i];
-                    if ($quincena[$i] == 1) {
-
-                        switch ($tmp->locale('es')->day) {
-                            case 1:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D1;
-                                break;
-
-                            case 2:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D2;
-                                break;
-
-                            case 3:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D3;
-                                break;
-
-                            case 4:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D4;
-                                break;
-
-                            case 5:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D5;
-                                break;
-
-                            case 6:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D6;
-                                break;
-
-                            case 7:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D7;
-                                break;
-
-                            case 8:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D8;
-                                break;
-
-                            case 9:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D9;
-                                break;
-
-                            case 10:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D10;
-                                break;
-
-                            case 11:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D11;
-                                break;
-
-                            case 12:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D12;
-                                break;
-
-                            case 13:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D13;
-                                break;
-
-                            case 14:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D14;
-                                break;
-
-                            case 15:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D15;
-                                break;
-                        }
-
-                    }else{
-                        switch ($tmp->locale('es')->day) {
-                            case 16:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D1;
-                                break;
-
-                            case 17:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D2;
-                                break;
-
-                            case 18:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D3;
-                                break;
-
-                            case 19:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D4;
-                                break;
-
-                            case 20:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D5;
-                                break;
-
-                            case 21:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D6;
-                                break;
-
-                            case 22:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D7;
-                                break;
-
-                            case 23:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D8;
-                                break;
-
-                            case 24:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D9;
-                                break;
-
-                            case 25:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D10;
-                                break;
-
-                            case 26:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D11;
-                                break;
-
-                            case 27:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D12;
-                                break;
-
-                            case 28:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D13;
-                                break;
-
-                            case 29:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D14;
-                                break;
-
-                            case 30:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D15;
-                                break;
-
-                            case 31:
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D16;
-                                break;
-                        }
-                    }
-
-
-                    if ($resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] == 'Libre') {
-                        $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraEntrada'] = 'Libre';
-                        $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraSalida'] = 'Libre';
-
-
-                    }else{
-
-                        if ($resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] != 'ND') {
-                            $turno = DB::connection('merulink')->table('Horarios')
-                                            ->where('codigo','=', $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] )
+                    $empleadoHorario[$j][$i] = DB::connection('merulink')->table('empleado_horarios')
+                                            ->where('cedula_empleado','=', $empleados[$j]->cedula )
+                                            ->where('mes','=',$tmp->locale('es')->monthName)
+                                            ->where('quincena','=',$quincena[$i])
                                             ->first();
 
-                            $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraEntrada'] = $turno->hora_entrada;
-                            $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraSalida'] = $turno->hora_salida;
-                        }
 
 
-                    }
+                    if ($empleadoHorario[$j][$i] != null) {
 
-                }else{
-                    // $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['cedula'] = null;
-                    // $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['fecha']=$tmp->toDateString();
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['mes']=$tmp->locale('es')->month;
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['quincena']=$quincena[$i];
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =null;
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraEntrada'] = null;
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraSalida'] = null;
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['mes']=$tmp->month;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['mes']=$tmp->locale('es')->month;
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['quincena']=$quincena[$i];//
+                        if ($quincena[$i] == 1) {
 
-                }
+                            switch ($tmp->day) {
+                                case 1:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D1;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D1;
+                                    break;
 
-                $Asistencia[$tmp->toDateString()][$empleados[$j]->cedula]['Registro'] = DB::connection('ra')->table('asistencia')
-                                                                                                        ->where('cedula','=' ,$empleados[$j]->cedula)
-                                                                                                        ->where('fecha','=', $tmp->toDateString())
-                                                                                                        ->first();
+                                case 2:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D2;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D2;
+                                    break;
 
-                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['ColorIncidencia'] = '#000000';
-                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['Mensaje'] = '';
-                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['MensajeEntrada'] = '';
-                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['MensajeSalida'] = '';
-                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['HayIncidencia'] = false;
-                if ($empleadoHorario[$i][$j] == null) {
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['HayIncidencia'] = true;
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['Mensaje'] = 'No se le asignó turno para ésta fecha.';
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['ColorIncidencia'] = '#f65e5e';
-                    $listaCedulaEmpleados[$j]['contIncidencia']++;
+                                case 3:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D3;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D3;
+                                    break;
 
-                }
+                                case 4:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D4;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D4;
+                                    break;
 
-                if ($resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] != 'Libre' && $Asistencia[$tmp->toDateString()][$empleados[$j]->cedula]['Registro'] == null) {
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['Mensaje'] = 'Ausente.';
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['ColorIncidencia'] = '#f65e5e';
-                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['HayIncidencia'] = true;
-                    $listaCedulaEmpleados[$j]['contIncidencia']++;
-                }
+                                case 5:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D5;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D5;
+                                    break;
 
-                if ($empleadoHorario[$i][$j] != null && $Asistencia[$tmp->toDateString()][$empleados[$j]->cedula]['Registro'] != null) {
+                                case 6:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D6;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D6;
+                                    break;
 
-                    if ($resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] == 'Libre' && $Asistencia[$tmp->toDateString()][$empleados[$j]->cedula]['Registro']->hora_entrada != null) {
-                        $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['Mensaje'] = 'Entró a trabajar en su dia Libre.';
-                        $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['ColorIncidencia'] = '#F9BF56';
-                        $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['HayIncidencia'] = true;
-                        $listaCedulaEmpleados[$j]['contIncidencia']++;
-                    }else{
+                                case 7:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D7;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D7;
+                                    break;
 
-                        $empleadoHorarioTurnoEntrada = new Carbon($tmp->toDateString() . ' ' . $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraEntrada']);
-                        $empleadoHorarioTurnoSalida = new Carbon($tmp->toDateString() . ' ' . $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraSalida']);
-                        $asistenciaHoraEntrada = new Carbon($Asistencia[$tmp->toDateString()][$empleados[$j]->cedula]['Registro']->hora_entrada);
+                                case 8:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D8;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D8;
+                                    break;
 
-                        if ($Asistencia[$tmp->toDateString()][$empleados[$j]->cedula]['Registro']->hora_salida_2 != null) {
-                            $asistenciaHoraSalida = new Carbon($Asistencia[$tmp->toDateString()][$empleados[$j]->cedula]['Registro']->hora_salida_2);
+                                case 9:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D9;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D9;
+                                    break;
+
+                                case 10:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D10;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D10;
+                                    break;
+
+                                case 11:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D11;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D11;
+                                    break;
+
+                                case 12:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D12;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D12;
+                                    break;
+
+                                case 13:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D13;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D13;
+                                    break;
+
+                                case 14:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D14;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D14;
+                                    break;
+
+                                case 15:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D15;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D15;
+                                    break;
+                            }
+
                         }else{
-                            if ($Asistencia[$tmp->toDateString()][$empleados[$j]->cedula]['Registro']->hora_salida != null)  {
-                                $asistenciaHoraSalida = new Carbon($Asistencia[$tmp->toDateString()][$empleados[$j]->cedula]['Registro']->hora_salida);
-                            }else{
-                                $asistenciaHoraSalida = null;
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['Mensaje'] = 'El empleado no marcó su salida.';
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['ColorIncidencia'] = '#F9BF56';
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['HayIncidencia'] = true;
-                                $listaCedulaEmpleados[$j]['contIncidencia']++;
+                            switch ($tmp->day) {
+                                case 16:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D1;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D1;
+                                    break;
+
+                                case 17:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D2;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D2;
+                                    break;
+
+                                case 18:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D3;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D3;
+                                    break;
+
+                                case 19:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D4;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D4;
+                                    break;
+
+                                case 20:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D5;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D5;
+                                    break;
+
+                                case 21:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D6;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D6;
+                                    break;
+
+                                case 22:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D7;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D7;
+                                    break;
+
+                                case 23:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D8;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D8;
+                                    break;
+
+                                case 24:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D9;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D9;
+                                    break;
+
+                                case 25:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D10;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D10;
+                                    break;
+
+                                case 26:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D11;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D11;
+                                    break;
+
+                                case 27:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D12;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D12;
+                                    break;
+
+                                case 28:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D13;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D13;
+                                    break;
+
+                                case 29:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D14;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D14;
+                                    break;
+
+                                case 30:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D15;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D15;
+                                    break;
+
+                                case 31:
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =  $empleadoHorario[$j][$i]->D16;//$resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['codTurno'] =  $empleadoHorario[$i][$j]->D16;
+                                    break;
                             }
+                        }
+
+
+                        if ($resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] == 'Libre') {
+                            $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraEntrada'] = 'Libre';
+                            $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraSalida'] = 'Libre';
+                            $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['Mensaje'] = '';
+                            $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeEntrada'] = '';
+                            $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeSalida'] = '';
+                            $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '';
+                        }else{
+
+                            if ($resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] != 'ND') {
+                                $turno = DB::connection('merulink')->table('Horarios')
+                                                ->where('codigo','=', $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] )
+                                                ->first();
+
+                                $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraEntrada'] = $turno->hora_entrada;
+                                $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraSalida'] = $turno->hora_salida;
+                            }
+
 
                         }
 
 
-                        if ( $asistenciaHoraEntrada < $empleadoHorarioTurnoEntrada ) {
-                            if ($asistenciaHoraEntrada->diffInMinutes($empleadoHorarioTurnoEntrada) > 30) {
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['MensajeEntrada'] = 'Llegó unos ' . ($asistenciaHoraEntrada->diffInMinutes($empleadoHorarioTurnoEntrada) > 60 ? $asistenciaHoraEntrada->diffInHours($empleadoHorarioTurnoEntrada) . ' hora(s) ' : $asistenciaHoraEntrada->diffInMinutes($empleadoHorarioTurnoEntrada) .' minutos ') . 'antes de la ' . $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraEntrada'];
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['ColorIncidencia'] = '#90cc77';
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['HayIncidencia'] = true;
-                                $listaCedulaEmpleados[$j]['contIncidencia']++;
-                            }
-                        }
+                    }else{
+                        // $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['cedula'] = null;
+                        // $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['fecha']=$tmp->toDateString();
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['mes']=$tmp->month;
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['quincena']=$quincena[$i];
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] =null;
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraEntrada'] = null;
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraSalida'] = null;
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = false;
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['Mensaje'] = '';
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeEntrada'] = '';
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeSalida'] = '';
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '';
 
-                        if ( $asistenciaHoraEntrada > $empleadoHorarioTurnoEntrada ) {
-                            if ($empleadoHorarioTurnoEntrada->diffInMinutes($asistenciaHoraEntrada) > 15) {
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['MensajeEntrada'] = 'Llegó unos ' . ($empleadoHorarioTurnoEntrada->diffInMinutes($asistenciaHoraEntrada) > 60 ? $empleadoHorarioTurnoEntrada->diffInHours($asistenciaHoraEntrada) . ' hora(s) ' : $empleadoHorarioTurnoEntrada->diffInMinutes($asistenciaHoraEntrada) . ' minutos ') . 'despues de la ' . $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraEntrada'];
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['ColorIncidencia'] = '#f65e5e';
-                                $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['HayIncidencia'] = true;
-                                $listaCedulaEmpleados[$j]['contIncidencia']++;
-                            }
-                        }
-
-                        if ($asistenciaHoraSalida != null) {
-
-                            if ( $asistenciaHoraSalida < $empleadoHorarioTurnoSalida ) {
-                                if ($asistenciaHoraSalida->diffInMinutes($empleadoHorarioTurnoSalida) > 15) {
-                                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['MensajeSalida'] = 'Salió unos ' . ($asistenciaHoraSalida->diffInMinutes($empleadoHorarioTurnoSalida) > 60 ? $asistenciaHoraSalida->diffInHours($empleadoHorarioTurnoSalida) . ' hora(s) ' : $asistenciaHoraSalida->diffInMinutes($empleadoHorarioTurnoSalida) . ' minutos ') . 'antes de la ' . $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraSalida'];
-                                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['ColorIncidencia'] = '#f65e5e';
-                                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['HayIncidencia'] = true;
-                                    $listaCedulaEmpleados[$j]['contIncidencia']++;
-                                }
-                            }
-
-                            if ( $asistenciaHoraSalida > $empleadoHorarioTurnoSalida ) {
-                                if ($empleadoHorarioTurnoSalida->diffInMinutes($asistenciaHoraSalida) > 30) {
-                                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['MensajeSalida'] = 'Salió unos ' . ($empleadoHorarioTurnoSalida->diffInMinutes($asistenciaHoraSalida) > 60 ? $empleadoHorarioTurnoSalida->diffInHours($asistenciaHoraSalida) . ' hora(s) ' : $empleadoHorarioTurnoSalida->diffInMinutes($asistenciaHoraSalida) . ' minutos ') . 'despues de la ' . $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['TurnoHoraSalida'];
-                                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['ColorIncidencia'] = '#90cc77';
-                                    $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['HayIncidencia'] = true;
-                                    $listaCedulaEmpleados[$j]['contIncidencia']++;
-                                }
-                            }
-
-                        }
                     }
 
+                    $Asistencia[$empleados[$j]->cedula][$tmp->toDateString()]['Registro'] = DB::connection('ra')->table('asistencia')
+                                                                                                            ->where('cedula','=' ,$empleados[$j]->cedula)
+                                                                                                            ->where('fecha','=', $tmp->toDateString())
+                                                                                                            ->first();
 
-                    // $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['Mensaje'] = 'Ausente.';
-                    // $resultadoEmpleadoHorario[$tmp->toDateString()][$empleados[$j]->cedula]['ColorIncidencia'] = '#f65e5e';
+                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '#000000';
+                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['Mensaje'] = '';
+                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeEntrada'] = '';
+                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeSalida'] = '';
+                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = false;
+
+                    if ($empleadoHorario[$j][$i] == null) {
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = true;
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['Mensaje'] = 'No se le asignó turno para ésta fecha.';
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '#f65e5e';
+                        $listaEmpleados[$j]['contIncidencia']++;//$listaCedulaEmpleados[$j]['contIncidencia']++;
+
+                    }
+
+                    if ($resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] != 'Libre' && $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] != null && $Asistencia[$empleados[$j]->cedula][$tmp->toDateString()]['Registro'] == null) {
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['Mensaje'] = 'Ausente.';
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '#f65e5e';
+                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = true;
+                        $listaEmpleados[$j]['contIncidencia']++;//$listaCedulaEmpleados[$j]['contIncidencia']++;
+                    }
+
+                    if ($empleadoHorario[$j][$i] != null && $Asistencia[$empleados[$j]->cedula][$tmp->toDateString()]['Registro'] != null) {
+
+                        if ($resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['codTurno'] == 'Libre' && $Asistencia[$empleados[$j]->cedula][$tmp->toDateString()]['Registro']->hora_entrada != null) {
+                            $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['Mensaje'] = 'Entró a trabajar en su dia Libre.';
+                            $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '#F9BF56';
+                            $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = true;
+                            $listaEmpleados[$j]['contIncidencia']++;//$listaCedulaEmpleados[$j]['contIncidencia']++;
+                        }else{
+
+                            $empleadoHorarioTurnoEntrada = new Carbon($tmp->toDateString() . ' ' . $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraEntrada']);
+                            $empleadoHorarioTurnoSalida = new Carbon($tmp->toDateString() . ' ' . $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraSalida']);
+                            $asistenciaHoraEntrada = new Carbon($Asistencia[$empleados[$j]->cedula][$tmp->toDateString()]['Registro']->hora_entrada);
+
+                            if ($Asistencia[$empleados[$j]->cedula][$tmp->toDateString()]['Registro']->hora_salida_2 != null) {
+                                $asistenciaHoraSalida = new Carbon($Asistencia[$empleados[$j]->cedula][$tmp->toDateString()]['Registro']->hora_salida_2);
+                            }else{
+                                if ($Asistencia[$empleados[$j]->cedula][$tmp->toDateString()]['Registro']->hora_salida != null)  {
+                                    $asistenciaHoraSalida = new Carbon($Asistencia[$empleados[$j]->cedula][$tmp->toDateString()]['Registro']->hora_salida);
+                                }else{
+                                    $asistenciaHoraSalida = null;
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['Mensaje'] = 'El empleado no marcó su salida.';
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '#F9BF56';
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = true;
+                                    $listaEmpleados[$j]['contIncidencia']++;//$listaCedulaEmpleados[$j]['contIncidencia']++;
+                                }
+
+                            }
+
+
+                            if ( $asistenciaHoraEntrada < $empleadoHorarioTurnoEntrada ) {
+                                if ($asistenciaHoraEntrada->diffInMinutes($empleadoHorarioTurnoEntrada) > 30) {
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeEntrada'] = 'Llegó unos ' . ($asistenciaHoraEntrada->diffInMinutes($empleadoHorarioTurnoEntrada) > 60 ? $asistenciaHoraEntrada->diffInHours($empleadoHorarioTurnoEntrada) . ' hora(s) ' : $asistenciaHoraEntrada->diffInMinutes($empleadoHorarioTurnoEntrada) .' minutos ') . 'antes de la ' . $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraEntrada'];
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '#90cc77';
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = true;
+                                    $listaEmpleados[$j]['contIncidencia']++;//$listaCedulaEmpleados[$j]['contIncidencia']++;
+                                }
+                            }
+
+                            if ( $asistenciaHoraEntrada > $empleadoHorarioTurnoEntrada ) {
+                                if ($empleadoHorarioTurnoEntrada->diffInMinutes($asistenciaHoraEntrada) > 15) {
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeEntrada'] = 'Llegó unos ' . ($empleadoHorarioTurnoEntrada->diffInMinutes($asistenciaHoraEntrada) > 60 ? $empleadoHorarioTurnoEntrada->diffInHours($asistenciaHoraEntrada) . ' hora(s) ' : $empleadoHorarioTurnoEntrada->diffInMinutes($asistenciaHoraEntrada) . ' minutos ') . 'despues de la ' . $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraEntrada'];
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '#f65e5e';
+                                    $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = true;
+                                    $listaEmpleados[$j]['contIncidencia']++;//$listaCedulaEmpleados[$j]['contIncidencia']++;
+                                }
+                            }
+
+                            if ($asistenciaHoraSalida != null) {
+
+                                if ( $asistenciaHoraSalida < $empleadoHorarioTurnoSalida ) {
+                                    if ($asistenciaHoraSalida->diffInMinutes($empleadoHorarioTurnoSalida) > 15) {
+                                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeSalida'] = 'Salió unos ' . ($asistenciaHoraSalida->diffInMinutes($empleadoHorarioTurnoSalida) > 60 ? $asistenciaHoraSalida->diffInHours($empleadoHorarioTurnoSalida) . ' hora(s) ' : $asistenciaHoraSalida->diffInMinutes($empleadoHorarioTurnoSalida) . ' minutos ') . 'antes de la ' . $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraSalida'];
+                                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '#f65e5e';
+                                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = true;
+                                        $listaEmpleados[$j]['contIncidencia']++;//$listaCedulaEmpleados[$j]['contIncidencia']++;
+                                    }
+                                }
+
+                                if ( $asistenciaHoraSalida > $empleadoHorarioTurnoSalida ) {
+                                    if ($empleadoHorarioTurnoSalida->diffInMinutes($asistenciaHoraSalida) > 30) {
+                                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['MensajeSalida'] = 'Salió unos ' . ($empleadoHorarioTurnoSalida->diffInMinutes($asistenciaHoraSalida) > 60 ? $empleadoHorarioTurnoSalida->diffInHours($asistenciaHoraSalida) . ' hora(s) ' : $empleadoHorarioTurnoSalida->diffInMinutes($asistenciaHoraSalida) . ' minutos ') . 'despues de la ' . $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['TurnoHoraSalida'];
+                                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['ColorIncidencia'] = '#90cc77';
+                                        $resultadoEmpleadoHorario[$empleados[$j]->cedula][$tmp->toDateString()]['HayIncidencia'] = true;
+                                        $listaEmpleados[$j]['contIncidencia']++;//$listaCedulaEmpleados[$j]['contIncidencia']++;
+                                    }
+                                }
+
+                            }
+                        }
+                    }
                 }
-
 
 
             }
+
+
         }
+       //dd($listaFechas, $listaEmpleados, $resultadoEmpleadoHorario);
+       return view('prenomina.incidencias.mostrar-resultados', compact('nombreDepartamento','listaFechas', 'listaEmpleados', 'resultadoEmpleadoHorario'));
+    }
 
-//       dd($fechaInicio->toDateString(), $fechaFin->toDateString(), $diferenciaDias, $listaFechas, $listaCedulaEmpleados, $resultadoEmpleadoHorario );
+    public function guardarIncidencias(Request $request)
+    {
 
-       return view('livewire.prenomina.incidencias.mostrar-incidencias', compact('departamento','listaFechas', 'listaCedulaEmpleados', 'resultadoEmpleadoHorario'));
+        if ($request) {
+
+            $mensaje = $request->Mensaje . ' ' . $request->MensajeEntrada . ' ' . $request->MensajeSalida;
+
+            DB::connection('ra')->table('incidencias')->insert([
+                'fecha' => $request->fecha,
+                'cedula_empleado' => $request->cedula,
+                'mensaje' => $mensaje,
+                'observacion' => $request->observacion[$request->cedula][$request->fecha]
+            ]);
+
+            return redirect()->route('mostrar_incidencias');
+        }
     }
 
 }

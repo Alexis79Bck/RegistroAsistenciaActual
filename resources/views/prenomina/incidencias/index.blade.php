@@ -30,57 +30,84 @@
         </div>
     </div>
     <hr class="dropdown-divider">
+    @livewire('prenomina.incidencias.mostrar-incidencias')
+    {{-- {!! Form::open(['route' => 'mostrar_incidencias', 'class' => 'px-2 row mx-auto', 'id'=> 'formConsultar']) !!} --}}
+    {{-- <div class="row justify-content-end">
+        <div class="col ">
+            @if (session('nivel') == 1)
+            {!! Form::label('Departamento', 'Departamento:', ['class' => 'form-check-label']) !!}
 
-    {!! Form::open(['route' => 'mostrar_incidencias', 'class' => 'g-1 align-items-center', 'id' => 'formConsultar']) !!}
-    <div class="row mb-2">
-        <div class="col">
-            <div class="form-check">
-                {!! Form::label('Departamento', 'Departamento', ['class' => 'form-check-label']) !!}
-            </div>
-            <div class=" form-group" id="grupoDepartamentos">
-                <select name="departamento" id="selDepartamento" class="form-select form-select-sm"></select>
-            </div>
+            <select name="departamento" class="form-select form-select-sm">
+                <option>-- Seleccione --</option>
+                @foreach ($allDepartamentos as $depto)
+                <option value="{{$depto->codigo}}">{{ $depto->nombre }}</option>
+                @endforeach
 
+            </select>
+            @else
+
+                {!! Form::label('Departamento', 'Departamento:', ['class' => 'form-check-label']) !!}
+                <div class="h4">{{ session('nombre_departamento') }}</div>
+                {!! Form::hidden('departamento', session('id_departamento'))  !!}
+
+            @endif
+            {{-- @livewire('prenomina.incidencias.select-departamento') -}}
         </div>
-        <div class="col">
-            {!! Form::label('fechaInicio', 'Rango de Fecha:', ['class' => 'form-check-label float-end']) !!}
-        </div>
 
-        <div class="col">
+
+        <div class="col ">
+            {!! Form::label('fechaInicio', 'Rango de Fecha:', ['class' => 'form-check-label']) !!}
 
             <div class=" form-group">
+
                 <div class="input-group input-group-sm mb-1 " id="grupoFechaInicio">
                     <span class="input-group-text bg-primary text-white fw-bold">Desde:</span>
-                    {!! Form::date('fechaInicio', date('Y-m-d'), ['class' => 'form-control ', 'id' => 'ctrlFechaInicio', 'min' => date('Y-m-d', strtotime($minFijadoFechaInicio->toDateString())), 'max' => date('Y-m-d', strtotime($maxFijadoFechaInicio->toDateString()))]) !!}
+                    {!! Form::date('fechaInicio', date('Y-m-d', strtotime($fecha)), [
+                    'class' => 'form-control ',
+                    'id' => 'ctrlFechaInicio',
+                    'min' => date('Y-m-d', strtotime($minFecha)),
+                    'max' => date('Y-m-d', strtotime($maxFecha))
+                    ]) !!}
 
                 </div>
             </div>
-        </div>
-        <div class="col">
             <div class=" form-group">
                 <div class="input-group input-group-sm mb-1 " id="grupoFechaFin">
                     <span class="input-group-text bg-primary text-white fw-bold">Hasta:</span>
-                    {!! Form::date('fechaFin', date('Y-m-d'), ['class' => 'form-control', 'id' => 'ctrlFechaFin', 'min' => date('Y-m-d', strtotime($minFijadoFechaInicio->toDateString())), 'max' => date('Y-m-d', strtotime($maxFijadoFechaInicio->toDateString()))]) !!}
+                    {!! Form::date('fechaFin', date('Y-m-d', strtotime($fecha)), [
+                    'class' => 'form-control',
+                    'id' => 'ctrlFechaFin',
+                    'min' => date('Y-m-d', strtotime($minFecha)),
+                    'max' => date('Y-m-d', strtotime($maxFecha))
+                    ]) !!}
                 </div>
             </div>
+
+            {{-- @livewire('prenomina.incidencias.select-fecha-inicio')
+            @livewire('prenomina.incidencias.select-fecha-fin') -}}
+
+
         </div>
-        <div class="col">
-            <button class="btn btn-sm btn-success" type="submit" value="consultar"><i class="fas fa-search text-light"></i>
-                Mostrar</button>
+
+        <div class="col align-self-center">
+        <button class="btn btn-success text-center" type="submit">Mostrar</button>
+            {{-- @livewire('prenomina.incidencias.boton-consultar-incidencias') -}}
+
         </div>
+    </div> --}}
 
 
 
-    </div>
-    {!! Form::close() !!}
 
     <hr class="dropdown-divider">
-    {{-- @livewire('prenomina.incidencias.mostrar-incidencias', ['empleados' => $empleados], key($user->id)) --}}
+
+    @livewire('prenomina.incidencias.resultado-mostrar-incidencias')
+
 @endsection
 
 @section('CustomsJS')
-    <script>
-        $(document).ready(function() {
+<script>
+    $(document).ready(function() {
 
             setTimeout(function() {
                 $("#alert-box").alert('close');
@@ -189,5 +216,5 @@
         //     var key = window.Event ? e.which : e.keyCode
         //     return ((key >= 48 && key <= 57) || (key == 8))
         // }
-    </script>
+</script>
 @endsection

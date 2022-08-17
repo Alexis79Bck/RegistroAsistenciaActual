@@ -24,7 +24,6 @@ class BarridoDatosPunchData extends Component
         $totalRegistrosRA = $registrosRA->count();
         $registrosPD = DB::connection('punchdata')->table('DeviceLogRegister')->select('ID', 'EnrollID', 'PunchTime', 'PunchType')->orderBy('ID', 'ASC')->get();
         $totalRegistrosPD = $registrosPD->count();
-
         if ($totalRegistrosPD > $totalRegistrosRA) {
             $this->nNoRegistrados = 0;
 
@@ -174,6 +173,7 @@ class BarridoDatosPunchData extends Component
         $totalRegistrosRA = $registrosRA->count();
         $registrosPD = DB::connection('punchdata')->table('DeviceLogRegister')->select('ID', 'EnrollID', 'PunchTime', 'PunchType')->orderBy('ID', 'ASC')->get();
         $totalRegistrosPD = $registrosPD->count();
+
         $this->nRegNuevos = $totalRegistrosPD - $totalRegistrosRA;
         if ($this->nRegNuevos == 0) {
             $this->mensajeRegNuevos = false;

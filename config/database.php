@@ -120,7 +120,7 @@ return [
         'punchdata' => [
             'driver' => 'sqlite',
             'url' => env('DATABASE_URL'),
-            'database' => env('PD_DATABASE', database_path('PunchData.db')),
+            'database' => env('PD_DATABASE', 'C:\xampp\htdocs\RegistroAsistencia\database\migrations\PunchData.db'),
             ///absolute/path/to/TAMSdb.db
             'prefix' => '',
             'foreign_key_constraints' => env('PD_FOREIGN_KEYS', true),

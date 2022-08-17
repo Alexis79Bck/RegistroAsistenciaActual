@@ -9,38 +9,9 @@ use Carbon\CarbonInterval;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Hash;
 
 class AsistenciaController extends Controller
 {
-
-    public function preloader(Request $request)
-    {
-        $allUsers = DB::connection('merulink')->table('usuarios')->select('id','nombreusuario','Empleado_id')->get();
-
-
-        foreach ($allUsers as $user) {
-            if (Hash::check($user->nombreusuario, $request->usrn)) {
-                $consulta = DB::connection('merulink')->table('model_has_roles')->where('model_id','=',$user->id)->first();
-                $consulta2 = DB::connection('merulink')->table('roles')->where('id','=',$consulta->role_id)->first();
-                $empleado = DB::connection('merulink')->table('Empleados')->select('primer_nombre','primer_apellido','Departamento_id')->where('cedula','=',$user->Empleado_id)->first();
-                $nombreDepartamento = DB::connection('merulink')->table('Departamentos')->select('nombre')->where('codigo','=',$empleado->Departamento_id)->first();
-                $request->session()->put([
-                    'id_usuario' => $user->id,
-                    'nombre_usuario' => $user->nombreusuario,
-                    'nombre_completo' => $empleado->primer_nombre . ' ' . $empleado->primer_apellido,
-                    'nombre_departamento' => $nombreDepartamento->nombre,
-                    'id_departamento' => $empleado->Departamento_id,
-                    'rol_usuario' => $consulta2->name
-                ]);
-
-                break;
-            }
-        }
-
-
-        return view('web.preloading');
-    }
     /**
      * Display a listing of the resource.
      *
@@ -48,7 +19,9 @@ class AsistenciaController extends Controller
      */
     public function index()
     {
-
+        // Session::setId($request->sessionId);
+        // $user=Session::getId($request->sessionId);
+        // dd($request->sessionId, $user);
         return view('web.welcome');
     }
 
@@ -129,8 +102,7 @@ class AsistenciaController extends Controller
      */
     public function show()
     {
-        $idDepartamento = session()->get('Departamento_id');
-        return view('asistencia.consultar',['info'=>[], 'minFijadoFechaInicio' => '2021-01-01','tipoReporte'=> 0,'idDepartamento' => $idDepartamento]);
+        return view('asistencia.consultar',['info'=>[], 'minFijadoFechaInicio' => '2021-01-01','tipoReporte'=> 0 ]);
     }
 
     /**

@@ -1,99 +1,71 @@
-@extends('layouts.app')
 
-@section('content')
-    <div>
-        <div class="row row-cols-3 align-items-center mt-2 ">
-            <div class="col  ">
-                <img class="img-fluid " src="{{ asset('images/titulo-plaza-meru.png') }}" width="33%" height="50%">
-            </div>
-            <div class="col ">
-                <div class="fs-5 fw-bold text-center py-2 " style="color: #014a97;">Incidencias -
-                    {{ $departamento->nombre }}</div>
-            </div>
-            <div class="col">
-                <p></p>
-            </div>
-        </div>
-        <div class="row row-cols-3 mb-3">
-            <div class="col  ">
-                <p></p>
-            </div>
-            <div class="col ">
-                <div class="fs-4 fw-bold text-center " style="color: #014a97;" id="reloj"></div>
-            </div>
-            <div class="col">
-                <p></p>
-            </div>
-        </div>
+<div class="row justify-content-end">
+    <div class="col ">
+        @if ($nivel == 1)
+        {!! Form::label('Departamento', 'Departamento:', ['class' => 'form-check-label']) !!}
+
+        <select name="departamento" class="form-select form-select-sm"  wire:model="selectedDepartamento">
+            <option>-- Seleccione --</option>
+            @foreach ($departamentos as $depto)
+            <option value="{{$depto->codigo}}">{{ $depto->nombre }}</option>
+            @endforeach
+
+        </select>
+        @else
+
+        {!! Form::label('Departamento', 'Departamento:', ['class' => 'form-check-label']) !!}
+        <div class="h4">{{ session('nombre_departamento') }}</div>
+        {!! Form::hidden('departamento', session('id_departamento'),['wire:model'=>'selectedDepartamento']) !!}
+
+        @endif
+
+        {{-- @livewire('prenomina.incidencias.select-departamento') --}}
+
+    </div>
 
 
+    <div class="col ">
+        {!! Form::label('fechaInicio', 'Rango de Fecha:', ['class' => 'form-check-label']) !!}
 
+        <div class=" form-group">
 
-        <div class="card text-center shadow mb-5">
-
-            <div class="card-body">
-                <div class="accordion" id="accordionEmpleado">
-                    @for ($j = 0; $j < count($listaCedulaEmpleados); $j++)
-                        <div class="accordion-item">
-                            <h2 class="accordion-header" id="{{ $listaCedulaEmpleados[$j]['cedula'] }} ">
-                                <button class="accordion-button" type="button" data-bs-toggle="collapse"
-                                    data-bs-target="#collapse{{ $listaCedulaEmpleados[$j]['cedula'] }}"
-                                    aria-expanded="true"
-                                    aria-controls="collapse{{ $listaCedulaEmpleados[$j]['cedula'] }}">
-                                    {{ $listaCedulaEmpleados[$j]['nombre'] }}
-                                </button>
-                            </h2>
-                            <div id="collapse{{ $listaCedulaEmpleados[$j]['cedula'] }}"
-                                class="accordion-collapse collapse "
-                                aria-labelledby="{{ $listaCedulaEmpleados[$j]['cedula'] }}"
-                                data-bs-parent="#accordionEmpleado">
-                                <div class="accordion-body">
-                                    @if ($listaCedulaEmpleados[$j]['contIncidencia'] == 0)
-                                        <div class="alert"
-                                            style='-moz-box-shadow: 1px 1px 3px 2px ; -webkit-box-shadow: 1px 1px 3px 2px; box-shadow: 1px 1px 3px 2px;'>
-
-
-                                            <p>No registra incidencia. </p>
-
-
-
-                                        </div>
-                                    @else
-                                        @for ($i = 0; $i < count($listaFechas); $i++)
-                                            @if ($resultadoEmpleadoHorario[$listaFechas[$i]][$listaCedulaEmpleados[$j]['cedula']]['HayIncidencia'] == true)
-                                                <div class="alert"
-                                                    style='-moz-box-shadow: 1px 1px 3px 2px {{ $resultadoEmpleadoHorario[$listaFechas[$i]][$listaCedulaEmpleados[$j]['cedula']]['ColorIncidencia'] }}; -webkit-box-shadow: 1px 1px 3px 2px {{ $resultadoEmpleadoHorario[$listaFechas[$i]][$listaCedulaEmpleados[$j]['cedula']]['ColorIncidencia'] }}; box-shadow: 1px 1px 3px 2px {{ $resultadoEmpleadoHorario[$listaFechas[$i]][$listaCedulaEmpleados[$j]['cedula']]['ColorIncidencia'] }};'>
-                                                    <span
-                                                        class="fs-5">{{ date('d-m-Y', strtotime($listaFechas[$i])) }}</span>
-
-                                                    <p>{{ $resultadoEmpleadoHorario[$listaFechas[$i]][$listaCedulaEmpleados[$j]['cedula']]['Mensaje'] }}
-                                                    </p>
-                                                    <p>{{ $resultadoEmpleadoHorario[$listaFechas[$i]][$listaCedulaEmpleados[$j]['cedula']]['MensajeEntrada'] }}
-                                                    </p>
-                                                    <p>{{ $resultadoEmpleadoHorario[$listaFechas[$i]][$listaCedulaEmpleados[$j]['cedula']]['MensajeSalida'] }}
-                                                    </p>
-
-
-
-                                                </div>
-                                            @endif
-                                        @endfor
-                                    @endif
-                                </div>
-                            </div>
-                        </div>
-                    @endfor
-
-                </div>
+            <div class="input-group input-group-sm mb-1 " id="grupoFechaInicio">
+                <span class="input-group-text bg-primary text-white fw-bold">Desde:</span>
+                {!! Form::date('fechaInicio', date('Y-m-d', strtotime($fecha)), [
+                'class' => 'form-control ',
+                'id' => 'ctrlFechaInicio',
+                'min' => date('Y-m-d', strtotime($minFecha)),
+                'max' => date('Y-m-d', strtotime($maxFecha)),
+                'wire:model'=>'selectedFechaIni'
+                ]) !!}
 
             </div>
-            <div class="card-footer">
-                Card footer
-            </div>
-
 
         </div>
+        <div class=" form-group">
+            <div class="input-group input-group-sm mb-1 " id="grupoFechaFin">
+                <span class="input-group-text bg-primary text-white fw-bold">Hasta:</span>
+                {!! Form::date('fechaFin', date('Y-m-d', strtotime($fecha)), [
+                'class' => 'form-control',
+                'id' => 'ctrlFechaFin',
+                'min' => date('Y-m-d', strtotime($selectedFechaIni)),
+                'max' => date('Y-m-d', strtotime($maxFecha)),
+                'wire:model'=>'selectedFechaFin'
+                ]) !!}
+            </div>
+
+        </div>
+
+        {{-- @livewire('prenomina.incidencias.select-fecha-inicio')
+        @livewire('prenomina.incidencias.select-fecha-fin') --}}
 
 
     </div>
-@endsection
+
+    <div class="col align-self-center">
+        <button class="btn btn-success text-center" type="button" wire:click="mostrarResultado()">Mostrar</button>
+        {{-- @livewire('prenomina.incidencias.boton-consultar-incidencias') --}}
+
+    </div>
+</div>
+
