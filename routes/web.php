@@ -4,6 +4,8 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AsistenciaController;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\PrenominaController;
+use App\Http\Controllers\ResumenController;
+use Carbon\Carbon;
 use App\Http\Livewire\Prenomina\Incidencias\MostrarIncidencias; //use App\Http\Livewire\Prenomina\Incidencias\BotonGuardarIncidencias;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
@@ -44,6 +46,4 @@ Route::get('/incidencias/', [PrenominaController::class, 'incidenciasIndex'])->n
 Route::post('/incidencias/mostrar', [PrenominaController::class, 'mostrarIncidencias'])->name('mostrar_incidencias');
 Route::get('/incidencias/guardar-incidencia/', [PrenominaController::class, 'guardarIncidencias'])->name('guardar_incidencias');
 
-Route::get('/resumen', function () {
-    return view('prenomina.resumen.index');
-})->name('resumen');
+Route::get('/resumen', [ResumenController::class, 'index'])->name('resumen');

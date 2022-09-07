@@ -27,7 +27,10 @@
                 aria-expanded="false">Prenomina</a>
             <ul class="dropdown-menu border border-dark shadow">
                 <li><a class="dropdown-item text-dark" href="{{ route('incidencias') }} ">Incidencias</a></li>
-                {{-- <li><a class="dropdown-item text-dark" href="{{ route('resumen') }}">Resumen</a></li> --}}
+                @if (session('rol_usuario') === 'Super-Admin' || session('rol_usuario') === 'Recursos Humanos')
+                    <li><a class="dropdown-item text-dark" href="{{ route('resumen') }}">Resumen</a></li>
+                @endif
+
 
             </ul>
             {{-- <a class="nav-link link-light" aria-current="page" href="{{ route('registrar') }}">Registrar</a> --}}

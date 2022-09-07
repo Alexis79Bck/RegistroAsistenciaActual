@@ -75,6 +75,7 @@ class ResultadoMostrarIncidencias extends Component
                     $empleadoHorario[$j][$i] = DB::connection('merulink')->table('empleado_horarios')
                                             ->where('cedula_empleado','=', $empleados[$j]->cedula )
                                             ->where('mes','=',$tmp->locale('es')->monthName)
+                                            ->where('anio','=',$tmp->year)
                                             ->where('quincena','=',$quincena[$i])
                                             ->first();
 

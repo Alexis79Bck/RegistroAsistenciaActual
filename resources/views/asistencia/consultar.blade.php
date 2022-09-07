@@ -76,7 +76,7 @@
           {{-- <input class="form-check-input" type="radio" name="consultaPor" id="consultaPorDepartamento" value="departamento"> --}}
           {!! Form::label('consultaPorDepartamento', 'Por Departamento', ['class'=>'form-check-label']) !!}
         </div>
-        <div class=" form-group" id="grupoDepartamentos">
+        <div class=" form-group" id="grupoDepartamentos"> 
           <select name="departamento" id="selDepartamento" class="form-select form-select-sm"></select>
         </div>
         <div class=" form-group" id="grupoEmpleadosDepartamento">

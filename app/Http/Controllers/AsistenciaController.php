@@ -38,7 +38,7 @@ class AsistenciaController extends Controller
             }
         }
 
-
+        
         return view('web.preloading');
     }
     /**

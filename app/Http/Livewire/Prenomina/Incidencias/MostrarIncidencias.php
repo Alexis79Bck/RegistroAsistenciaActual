@@ -22,20 +22,7 @@ class MostrarIncidencias extends Component
     public $listaCedulaEmpleados;
     public $resultadoEmpleadoHorario;
 
-    // public function mount( $departamento,  $listaFechas, $listaCedulaEmpleados, $resultadoEmpleadoHorario)
-    // {
-
-    //     $this->departamento = $departamento;
-    //     $this->listaFechas = $listaFechas;
-    //     $this->listaCedulaEmpleados = $listaCedulaEmpleados;
-    //     $this->resultadoEmpleadoHorario = $resultadoEmpleadoHorario;
-
-    // }
-
-    // public function getDepartamento($value) {
-    //     $this->departamento = $value;
-    // }
-
+    
     public function updatedSelectedDepartamento($value) {
         $this->selectedDepartamento = $value;
     }
