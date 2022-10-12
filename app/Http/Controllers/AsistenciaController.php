@@ -38,7 +38,7 @@ class AsistenciaController extends Controller
             }
         }
 
-        
+
         return view('web.preloading');
     }
     /**
@@ -1444,6 +1444,40 @@ class AsistenciaController extends Controller
             //return view('asistencia.auditoria',compact('info','minFijadoFechaInicio','ctData','ctDepartamento','departamento','ctReg','ctFecha', 'lstFecha','tipoReporte'));
         }
 
+    }
+
+    public function detallesAsistencia($cedula, $fecha)
+    {
+        $empleado = DB::connection('merulink')->table('Empleados')->select('cedula','primer_nombre','primer_apellido','Departamento_id')->where('cedula','=',$cedula)->first();
+        $departamento = DB::connection('merulink')->table('Departamentos')->where('codigo','=',$empleado->Departamento_id)->first();
+        $detalles = DB::connection('ra')->table('DeviceLogRegister')->where('EnrollId','=',$cedula)->whereRaw('CAST(PunchTime AS date) = CAST(? AS date)',[date('Y-m-d',strtotime($fecha))])->get();
+        $cnt = $detalles->count();
+        foreach($detalles as $key => $detalle)
+        {
+
+            $timeDetalle[$key] = date('h:i:s a', strtotime($detalle->PunchTime));
+
+            switch($detalle->PunchType)
+            {
+                case 'FP':
+                    $punchType[$key] = 'Huella Dactilar';
+                    break;
+                case 'Face':
+                    $punchType[$key] = 'Reconocimiento Facial';
+                    break;
+            }
+
+
+        }
+
+        return view('asistencia.parcial.modal-detalles', [
+            'departamento' => $departamento->nombre,
+            'nombre' => $empleado->primer_nombre . ' ' . $empleado->primer_apellido,
+            'fecha' => $fecha,
+            'contador' => $cnt,
+            'hora' => $timeDetalle, 
+            'poncheBio'=>$punchType]);
+        //dd($empleado, $departamento, $detalles);
     }
 
 

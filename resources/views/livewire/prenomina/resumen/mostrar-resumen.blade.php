@@ -9,11 +9,8 @@
             <option value="{{$depto->codigo}}">{{ $depto->nombre }}</option>
             @endforeach
 
-        </select> 
+        </select>
     </div>
-
-
-
 
     <div class="col align-self-center">
         <button class="btn btn-success text-center" type="button" wire:click="mostrarResumen()">Mostrar</button>

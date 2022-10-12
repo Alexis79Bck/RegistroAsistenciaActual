@@ -76,7 +76,7 @@
           {{-- <input class="form-check-input" type="radio" name="consultaPor" id="consultaPorDepartamento" value="departamento"> --}}
           {!! Form::label('consultaPorDepartamento', 'Por Departamento', ['class'=>'form-check-label']) !!}
         </div>
-        <div class=" form-group" id="grupoDepartamentos"> 
+        <div class=" form-group" id="grupoDepartamentos">
           <select name="departamento" id="selDepartamento" class="form-select form-select-sm"></select>
         </div>
         <div class=" form-group" id="grupoEmpleadosDepartamento">
@@ -122,13 +122,14 @@
           <table class=" shadow table table-bordered border-dark">
               <tr class="bg-primary text-light  fw-bold text-center">
 
-                  <td colspan="7">
+                  <td colspan="8">
                     <span class="fs-4"> {{ $departamento[$i]->nombre}} </span>
                   </td>
 
               </tr>
               <tr class="bg-primary text-light fs-6 fw-bold text-center">
-                <td>Fecha</td>
+
+                <td colspan="2">Fecha</td>
                 <td>Nombre y Apellido</td>
                 <td>Cédula</td>
 
@@ -145,6 +146,11 @@
 
 
                         <tr>
+                          <td class="text-center">
+
+                            <a href="{{route('detalles_asistencia', [$info[$i][$j]['cedula'], $info[$i][$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+
+                          </td>
                           <td data-label="Fecha">{{$info[$i][$j]['fecha']}}</td>
                           <td data-label="Nombre y Apellido">{{$info[$i][$j]['nombre']}}</td>
                           <td data-label="Cédula">{{$info[$i][$j]['cedula']}}</td>
@@ -203,7 +209,9 @@
 
                           </td>
                         </tr>
+
                         @endif
+
                         @endfor
                     @endif
 
@@ -214,17 +222,19 @@
           </table>
 
         @endfor
+
         @else
         <table class=" shadow table table-bordered border-dark ">
           <tr class="bg-primary text-light  fw-bold text-center">
 
-            <td colspan="7">
+            <td colspan="8">
               <span class="fs-4">   </span>
             </td>
 
           </tr>
           <tr class="bg-primary text-light fs-6 fw-bold text-center">
-            <td>Fecha</td>
+
+            <td colspan="2">Fecha</td>
             <td>Nombre y Apellido</td>
             <td>Cédula</td>
 
@@ -235,7 +245,7 @@
           </tr>
           <tr class=" text-secondary  fw-bold text-center">
 
-              <td colspan="7">
+              <td colspan="8">
                 <span class="fs-4"> No hay información disponible </span>
               </td>
 
@@ -252,13 +262,13 @@
             <table class=" shadow table table-bordered border-dark ">
                 <tr class="bg-primary text-light  fw-bold text-center">
 
-                    <td colspan="7">
+                    <td colspan="8">
                       <span class="fs-4"> {{ $departamento[$i]->nombre}} </span>
                     </td>
 
                 </tr>
-                <tr >
-                  <td>Fecha</td>
+                <tr class="bg-primary text-light fs-6 fw-bold text-center">
+                  <td colspan="2">Fecha</td>
                   <td>Nombre y Apellido</td>
                   <td>Cédula</td>
 
@@ -270,7 +280,7 @@
                 @if ($ctReg[$i] == 0)
                   <tr class=" text-secondary  fw-bold text-center">
 
-                      <td colspan="7">
+                      <td colspan="8">
                         <span class="fs-4"> No hay información disponible </span>
                       </td>
 
@@ -279,6 +289,11 @@
                   @for ($j = 0; $j < $ctData; $j++)
                   @if ($departamento[$i]->nombre == $info[$i][$j]['departamento'])
                       <tr>
+                        <td class="text-center">
+
+                            <a href="{{route('detalles_asistencia', [$info[$i][$j]['cedula'], $info[$i][$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+
+                        </td>
                         <td data-label="Fecha">{{$info[$i][$j]['fecha']}}</td>
                         <td data-label="Nombre y Apellido">{{$info[$i][$j]['nombre']}}</td>
                         <td data-label="Cédula">{{$info[$i][$j]['cedula']}}</td>
@@ -342,7 +357,7 @@
           <table class=" shadow table table-bordered border-dark ">
             <tr class="bg-primary text-light  fw-bold text-center">
 
-              <td colspan="7">
+              <td colspan="8">
                 <span class="fs-4">   </span>
               </td>
 
@@ -359,7 +374,7 @@
             </tr>
             <tr class=" text-secondary  fw-bold text-center">
 
-                <td colspan="7">
+                <td colspan="8">
                   <span class="fs-4"> No hay información disponible </span>
                 </td>
 
@@ -372,13 +387,13 @@
           <table class=" shadow table table-bordered border-dark ">
             <tr class="bg-primary text-light  fw-bold text-center">
 
-                <td colspan="7">
+                <td colspan="8">
                   <span class="fs-4"> {{ $departamento[0]}} </span>
                 </td>
 
             </tr>
-            <tr >
-              <td>Fecha</td>
+            <tr class="bg-primary text-light fs-6 fw-bold text-center">
+              <td colspan="2">Fecha</td>
               <td>Nombre y Apellido</td>
               <td>Cédula</td>
 
@@ -390,7 +405,7 @@
             @if ($ctData == 0)
                   <tr class=" text-secondary  fw-bold text-center">
 
-                      <td colspan="7">
+                      <td colspan="8">
                         <span class="fs-4"> No hay información disponible </span>
                       </td>
 
@@ -401,6 +416,11 @@
 
                   @if ($lstFecha[$k] == $info[$j]['fecha'])
                       <tr>
+                        <td class="text-center">
+
+                            <a href="{{route('detalles_asistencia', [$info[$j]['cedula'], $info[$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+
+                        </td>
                         <td data-label="Fecha">{{$info[$j]['fecha']}}</td>
                         <td data-label="Nombre y Apellido">{{$info[$j]['nombre']}}</td>
                         <td data-label="Cédula">{{$info[$j]['cedula']}}</td>
@@ -465,13 +485,13 @@
             <table class=" shadow table table-bordered border-dark ">
               <tr class="bg-primary text-light  fw-bold text-center">
 
-                  <td colspan="7">
+                  <td colspan="8">
                     <span class="fs-4"> {{ $departamento[0]}} </span>
                   </td>
 
               </tr>
-              <tr >
-                <td>Fecha</td>
+              <tr class="bg-primary text-light fs-6 fw-bold text-center">
+                <td colspan="2">Fecha</td>
                 <td>Nombre y Apellido</td>
                 <td>Cédula</td>
 
@@ -483,7 +503,7 @@
               @if ($ctData == 0)
                     <tr class=" text-secondary  fw-bold text-center">
 
-                        <td colspan="7">
+                        <td colspan="8">
                           <span class="fs-4"> No hay información disponible </span>
                         </td>
 
@@ -491,6 +511,11 @@
               @else
                   @for ($j = 0; $j < $ctData; $j++)
                         <tr>
+                            <td class="text-center">
+
+                                <a href="{{route('detalles_asistencia', [$info[$j]['cedula'], $info[$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+
+                            </td>
                           <td data-label="Fecha">{{$info[$j]['fecha']}}</td>
                           <td data-label="Nombre y Apellido">{{$info[$j]['nombre']}}</td>
                           <td data-label="Cédula">{{$info[$j]['cedula']}}</td>
@@ -553,13 +578,13 @@
                 <table class=" shadow table table-bordered border-dark ">
                   <tr class="bg-primary text-light  fw-bold text-center">
 
-                      <td colspan="7">
+                      <td colspan="8">
                         <span class="fs-4"> {{ $nombreEmpleado }}  -  {{ $departamento[0]}} </span>
                       </td>
 
                   </tr>
-                  <tr >
-                    <td>Fecha</td>
+                  <tr class="bg-primary text-light fs-6 fw-bold text-center">
+                    <td colspan="2">Fecha</td>
                     <td >Hora Entrada</td>
                     <td>Hora Salida</td>
                     <td>Modo Entrada</td>
@@ -568,7 +593,7 @@
                   @if ($ctData == 0)
                         <tr class=" text-secondary  fw-bold text-center">
 
-                            <td colspan="7">
+                            <td colspan="8">
                               <span class="fs-4"> No hay información disponible </span>
                             </td>
 
@@ -576,6 +601,11 @@
                   @else
                       @for ($j = 0; $j < $ctData; $j++)
                             <tr>
+                                <td class="text-center">
+
+                                    <a href="{{route('detalles_asistencia', [$info[$j]['cedula'], $info[$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+
+                                </td>
                               <td data-label="Fecha">{{$info[$j]['fecha']}}</td>
 
                               <td data-label="Hora Entrada">
@@ -636,13 +666,13 @@
                 <table class=" shadow table table-bordered border-dark ">
                   <tr class="bg-primary text-light  fw-bold text-center">
 
-                      <td colspan="7">
+                      <td colspan="8">
                         <span class="fs-5"> {{ $nombreEmpleado }}  - {{ $departamento[0]}} </span>
                       </td>
 
                   </tr>
-                  <tr >
-                    <td>Fecha</td>
+                  <tr class="bg-primary text-light fs-6 fw-bold text-center">
+                    <td colspan="2">Fecha</td>
                     <td >Hora Entrada</td>
                     <td>Hora Salida</td>
                     <td>Modo Entrada</td>
@@ -651,7 +681,7 @@
                   @if ($ctData == 0)
                         <tr class=" text-secondary  fw-bold text-center">
 
-                            <td colspan="7">
+                            <td colspan="8">
                               <span class="fs-4"> No hay información disponible </span>
                             </td>
 
@@ -659,6 +689,11 @@
                   @else
                       @for ($j = 0; $j < $ctData; $j++)
                             <tr>
+                                <td class="text-center">
+
+                                    <a href="{{route('detalles_asistencia', [$info[$i][$j]['cedula'], $info[$i][$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+
+                                </td>
                               <td data-label="Fecha">{{$info[$j]['fecha']}}</td>
 
                               <td data-label="Hora Entrada">

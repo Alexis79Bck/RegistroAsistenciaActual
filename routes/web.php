@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AsistenciaController;
+use App\Http\Livewire\ModalDetallesEmpleadoAsistencia;
 use App\Http\Controllers\ReporteController;
 use App\Http\Controllers\PrenominaController;
 use App\Http\Controllers\ResumenController;
@@ -30,6 +31,7 @@ Route::get('departamento-{id}/empleados', [AsistenciaController::class, 'depto_e
 Route::get('departamentos', [AsistenciaController::class, 'deptos']);
 Route::get('busca-empleado/{id}', [AsistenciaController::class, 'busca_empleado'])->name('busca_empleado');
 Route::get('consultar-asistencia', [AsistenciaController::class, 'show'])->name('consultar_asistencia');
+Route::get('detalles-asistencia/{cedula}/{fecha}', [AsistenciaController::class,'detallesAsistencia'])->name('detalles_asistencia');
 Route::get('auditoria-asistencia', [AsistenciaController::class, 'auditoria'])->name('auditoria_asistencia');
 Route::post('ejecutar-consulta', [AsistenciaController::class, 'ejecutarConsulta'])->name('ejecutar_consulta');
 Route::post('ejecutar-auditoria', [AsistenciaController::class, 'ejecutarAuditoria'])->name('ejecutar_consulta_aud');
