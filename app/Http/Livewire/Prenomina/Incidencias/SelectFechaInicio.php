@@ -16,7 +16,7 @@ class SelectFechaInicio extends Component
         $fecha = new Carbon('yesterday');
         $this->selectedFecha = $fecha->toDateString();
         $this->maxFecha = $fecha->toDateString();
-        $fecha = new Carbon('yesterday -3 months');
+        $fecha = new Carbon('yesterday -1 months');
         $this->minFecha = $fecha->toDateString();
     }
 

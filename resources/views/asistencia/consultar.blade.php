@@ -291,7 +291,7 @@
                       <tr>
                         <td class="text-center">
 
-                            <a href="{{route('detalles_asistencia', [$info[$i][$j]['cedula'], $info[$i][$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+                            <button type="button" class="btn btn-primary" onclick="window.open('{{ route('detalles_asistencia', [$info[$i][$j]['cedula'], $info[$i][$j]['fecha']])}}', 'newwindow','popup=yes,location=no,toolbar=no'); return false">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></button>
 
                         </td>
                         <td data-label="Fecha">{{$info[$i][$j]['fecha']}}</td>
@@ -691,7 +691,7 @@
                             <tr>
                                 <td class="text-center">
 
-                                    <a href="{{route('detalles_asistencia', [$info[$i][$j]['cedula'], $info[$i][$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+                                    <a href="{{route('detalles_asistencia', [$info[$i][$j]['cedula'], $info[$i][$j]['fecha']])}}" class="btn btn-primary" onclick="window.open('detalles-asistencia/' + $info[$i][$j]['cedula'] + '/' + $info[$i][$j]['fecha']', 'newwindow'); return false">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
 
                                 </td>
                               <td data-label="Fecha">{{$info[$j]['fecha']}}</td>

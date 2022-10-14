@@ -8,6 +8,7 @@ use App\Http\Controllers\PrenominaController;
 use App\Http\Controllers\ResumenController;
 use Carbon\Carbon;
 use App\Http\Livewire\Prenomina\Incidencias\MostrarIncidencias; //use App\Http\Livewire\Prenomina\Incidencias\BotonGuardarIncidencias;
+use App\Http\Livewire\ResultadoAuditoriaAsistencia;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -34,7 +35,8 @@ Route::get('consultar-asistencia', [AsistenciaController::class, 'show'])->name(
 Route::get('detalles-asistencia/{cedula}/{fecha}', [AsistenciaController::class,'detallesAsistencia'])->name('detalles_asistencia');
 Route::get('auditoria-asistencia', [AsistenciaController::class, 'auditoria'])->name('auditoria_asistencia');
 Route::post('ejecutar-consulta', [AsistenciaController::class, 'ejecutarConsulta'])->name('ejecutar_consulta');
-Route::post('ejecutar-auditoria', [AsistenciaController::class, 'ejecutarAuditoria'])->name('ejecutar_consulta_aud');
+//Route::post('ejecutar-auditoria', [AsistenciaController::class, 'ejecutarAuditoria'])->name('ejecutar_consulta_aud');
+Route::post('ejecutar-auditoria', ResultadoAuditoriaAsistencia::class)->name('ejecutar_consulta_aud');
 Route::post('asistencia/guardar', [AsistenciaController::class, 'store'])->name('guardar_asistencia');
 Route::post('asistencia/editar/', [AsistenciaController::class, 'guardarEditarAsistencia'])->name('editar_asistencia');
 Route::post('asistencia/actualizar/', [AsistenciaController::class, 'update'])->name('actualizar_asistencia');

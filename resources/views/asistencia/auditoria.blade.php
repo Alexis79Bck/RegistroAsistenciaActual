@@ -42,7 +42,7 @@
             <div class=" form-group">
                 <div class="input-group input-group-sm mb-1 " id="grupoFechaInicio">
                     <span class="input-group-text bg-primary text-white fw-bold">Desde:</span>
-                    {!! Form::date('fechaInicio', date('Y-m-d'), ['class' => 'form-control ', 'id' => 'ctrlFechaInicio', 'min' => date('Y-m-d', strtotime($minFijadoFechaInicio)), 'max' => date('Y-m-d', strtotime('today'))]) !!}
+                    {!! Form::date('fechaInicio', date('Y-m-d'), ['class' => 'form-control ', 'wire:model'=>'fechaInicio', 'id' => 'ctrlFechaInicio', 'min' => date('Y-m-d', strtotime($minFijadoFechaInicio)), 'max' => date('Y-m-d', strtotime('today'))]) !!}
 
                 </div>
             </div>
@@ -51,7 +51,7 @@
             <div class=" form-group">
                 <div class="input-group input-group-sm mb-1 " id="grupoFechaFin">
                     <span class="input-group-text bg-primary text-white fw-bold">Hasta:</span>
-                    {!! Form::date('fechaFin', date('Y-m-d'), ['class' => 'form-control', 'id' => 'ctrlFechaFin', 'min' => date('Y-m-d', strtotime($minFijadoFechaInicio)), 'max' => date('Y-m-d', strtotime('today'))]) !!}
+                    {!! Form::date('fechaFin', date('Y-m-d'), ['class' => 'form-control', 'wire:model'=>'fechaFin', 'id' => 'ctrlFechaFin', 'min' => date('Y-m-d', strtotime($minFijadoFechaInicio)), 'max' => date('Y-m-d', strtotime('today'))]) !!}
                 </div>
             </div>
         </div>
@@ -67,31 +67,31 @@
             </div>
             <div class="col">
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="consultaHoy" id="consultaHoy" value="hoy">
+                    <input class="form-check-input" type="checkbox" name="consultaHoy" id="consultaHoy" wire:model='porDia' value="porDia">
                     {!! Form::label('consultaHoy', 'Del día', ['class' => 'form-check-label']) !!}
                 </div>
             </div>
             <div class="col">
                 <div class="form-check">
-                    {!! Form::radio('consultaPor', 'departamento', false, ['id' => 'consultaPorDepartamento', 'class' => 'form-check-input']) !!}
+                    {!! Form::radio('consultaPor', 'departamento', false, ['id' => 'consultaPorDepartamento', 'wire:model'=>'consultarPor', 'class' => 'form-check-input']) !!}
                     {{-- <input class="form-check-input" type="radio" name="consultaPor" id="consultaPorDepartamento" value="departamento"> --}}
                     {!! Form::label('consultaPorDepartamento', 'Por Departamento', ['class' => 'form-check-label']) !!}
                 </div>
                 <div class=" form-group" id="grupoDepartamentos">
-                    <select name="departamento" id="selDepartamento" class="form-select form-select-sm"></select>
+                    <select name="departamento" id="selDepartamento" class="form-select form-select-sm" wire:model='selectedDepartamento'></select>
                 </div>
                 <div class=" form-group" id="grupoEmpleadosDepartamento">
                     <select name="empleadoDepartamento" id="selEmpleadoDepartamento"
-                        class="form-select form-select-sm"></select>
+                        class="form-select form-select-sm" wire:model='selectedEmpleado'></select>
                 </div>
             </div>
             <div class="col">
                 <div class="form-check">
-                    {!! Form::radio('consultaPor', 'cedula', false, ['id' => 'consultaPorCedula', 'class' => 'form-check-input']) !!}
+                    {!! Form::radio('consultaPor', 'cedula', false, ['id' => 'consultaPorCedula', 'wire:model'=>'consultarPor','class' => 'form-check-input']) !!}
                     {{-- <input class="form-check-input" type="radio" name="consultaPor" id="consultaPorCedula" value="cedula"> --}}
                     {!! Form::label('consultaPorCedula', 'Por Cédula', ['class' => 'form-check-label']) !!}
                 </div>
-                {!! Form::text('cedula', null, ['id' => 'cedula', 'class' => 'form-control form-control-sm', 'onKeyPress' => 'return soloNumeros(event)', 'maxlength' => '9']) !!}
+                {!! Form::text('cedula', null, ['id' => 'cedula', 'wire:model'=>'cedula', 'class' => 'form-control form-control-sm', 'onKeyPress' => 'return soloNumeros(event)', 'maxlength' => '9']) !!}
             </div>
         </div>
 
