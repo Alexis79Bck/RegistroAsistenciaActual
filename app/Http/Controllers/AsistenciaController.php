@@ -1214,7 +1214,7 @@ class AsistenciaController extends Controller
 
     public function ejecutarAuditoria(Request $request){
         $minFijadoFechaInicio = new Carbon('last year');
-        dd($minFijadoFechaInicio);
+       
         if (Carbon::parse($request->fechaFin)->lessThan(Carbon::parse($request->fechaInicio))) {
             return redirect()->route('auditoria_asistencia')->with('mensaje-error','La Fecha Final no puede ser menor a la Fecha Inicial.')->withInput();
         }

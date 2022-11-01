@@ -11,7 +11,7 @@ class ConsultarAsistencias extends Component
     public function mount($data){
 
         $this->data = $data;
-
+        
     }
 
 

@@ -148,7 +148,7 @@
                         <tr>
                           <td class="text-center">
 
-                            <a href="{{route('detalles_asistencia', [$info[$i][$j]['cedula'], $info[$i][$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+                            <button type="button" onclick="window.open('{{ route('detalles_asistencia', [$info[$i][$j]['cedula'], $info[$i][$j]['fecha']])}}', 'newwindow','popup=yes,location=no,toolbar=no'); return false" class="btn btn-primary" >  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></button>
 
                           </td>
                           <td data-label="Fecha">{{$info[$i][$j]['fecha']}}</td>
@@ -417,8 +417,8 @@
                   @if ($lstFecha[$k] == $info[$j]['fecha'])
                       <tr>
                         <td class="text-center">
+                            <button type="button" onclick="window.open('{{ route('detalles_asistencia', [$info[$j]['cedula'], $info[$j]['fecha']])}}', 'newwindow','popup=yes,location=no,toolbar=no'); return false" class="btn btn-primary" >  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></button>
 
-                            <a href="{{route('detalles_asistencia', [$info[$j]['cedula'], $info[$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
 
                         </td>
                         <td data-label="Fecha">{{$info[$j]['fecha']}}</td>
@@ -513,7 +513,7 @@
                         <tr>
                             <td class="text-center">
 
-                                <a href="{{route('detalles_asistencia', [$info[$j]['cedula'], $info[$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+                                <button type="button" onclick="window.open('{{ route('detalles_asistencia', [$info[$j]['cedula'], $info[$j]['fecha']])}}', 'newwindow','popup=yes,location=no,toolbar=no'); return false" class="btn btn-primary" >  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></button>
 
                             </td>
                           <td data-label="Fecha">{{$info[$j]['fecha']}}</td>
@@ -603,7 +603,7 @@
                             <tr>
                                 <td class="text-center">
 
-                                    <a href="{{route('detalles_asistencia', [$info[$j]['cedula'], $info[$j]['fecha']])}}" class="btn btn-primary" target="_blank">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+                                    <button type="button" onclick="window.open('{{ route('detalles_asistencia', [$info[$j]['cedula'], $info[$j]['fecha']])}}', 'newwindow','popup=yes,location=no,toolbar=no'); return false" class="btn btn-primary" >  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></button>
 
                                 </td>
                               <td data-label="Fecha">{{$info[$j]['fecha']}}</td>
@@ -691,7 +691,7 @@
                             <tr>
                                 <td class="text-center">
 
-                                    <a href="{{route('detalles_asistencia', [$info[$i][$j]['cedula'], $info[$i][$j]['fecha']])}}" class="btn btn-primary" onclick="window.open('detalles-asistencia/' + $info[$i][$j]['cedula'] + '/' + $info[$i][$j]['fecha']', 'newwindow'); return false">  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></a>
+                                    <button type="button" onclick="window.open('{{ route('detalles_asistencia', [$info[$j]['cedula'], $info[$j]['fecha']])}}', 'newwindow','popup=yes,location=no,toolbar=no'); return false" class="btn btn-primary" >  <i class="fas fa-newspaper fa-lg" title="Detalles"></i></button>
 
                                 </td>
                               <td data-label="Fecha">{{$info[$j]['fecha']}}</td>
@@ -700,10 +700,11 @@
                                 @if ($info[$j]['horaEnt'] == null)
                                     <span class="text-danger">Empleado no registró entrada</span>
                                 @else
-                                    @if ($info[$i][$j]['nocturno'])
-                                        <span class="fw-bold fs-4 text-danger">{{$info[$i][$j]['horaEnt']}}</span>
+
+                                    @if ( $info[$j]['Nocturno'])
+                                        <span class="fw-bold fs-5 text-danger">{{$info[$j]['horaEnt']}}</span>
                                     @else
-                                        {{$info[$i][$j]['horaEnt']}}
+                                        {{$info[$j]['horaEnt']}}
                                     @endif
                                 @endif
                                 @if ($info[$j]['horaEnt2'] != null)
@@ -715,10 +716,11 @@
                                 @if ($info[$j]['horaSal'] == null)
                                     <span class="text-danger">Empleado no registró salida</span>
                                 @else
-                                    @if ($info[$i][$j]['nocturno'])
-                                        <span class="fw-bold fs-4 text-danger">({{$info[$i][$j]['fechaSal']}}) {{$info[$i][$j]['horaSal']}}</span>
+
+                                    @if ($info[$j]['Nocturno'])
+                                        <span class="fw-bold fs-5 text-danger">({{$info[$j]['fechaSal']}}) {{$info[$j]['horaSal']}}</span>
                                     @else
-                                        {{$info[$i][$j]['horaSal']}}
+                                        {{$info[$j]['horaSal']}}
                                     @endif
                                 @endif
                                 @if ($info[$j]['horaEnt2'] != null)
